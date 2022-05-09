@@ -90,8 +90,6 @@ type HeaderEngine interface {
 	SetTxPool(txpool txPool)
 
 	// Get network params
-	GovernanceMode() string
-	GoverningNode() common.Address
 	UnitPrice() uint64
 	CommitteeSize() uint64
 	Epoch() uint64

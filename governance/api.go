@@ -82,8 +82,8 @@ func (api *GovernanceKlayAPI) GasPriceAt(num *rpc.BlockNumber) (*hexutil.Big, er
 
 // Vote injects a new vote for governance targets such as unitprice and governingnode.
 func (api *PublicGovernanceAPI) Vote(key string, val interface{}) (string, error) {
-	gMode := api.governance.GovernanceMode()
-	gNode := api.governance.GoverningNode()
+	gMode := api.governance.Params().GovernanceMode()
+	gNode := api.governance.Params().GoverningNode()
 
 	if GovernanceModeMap[gMode] == params.GovernanceMode_Single && gNode != api.governance.NodeAddress() {
 		return "", errPermissionDenied
@@ -226,10 +226,7 @@ func (api *PublicGovernanceAPI) NodeAddress() common.Address {
 }
 
 func (api *PublicGovernanceAPI) isGovernanceModeBallot() bool {
-	if GovernanceModeMap[api.governance.GovernanceMode()] == params.GovernanceMode_Ballot {
-		return true
-	}
-	return false
+	return GovernanceModeMap[api.governance.Params().GovernanceMode()] == params.GovernanceMode_Ballot
 }
 
 func (api *GovernanceKlayAPI) GasPriceAtNumber(num int64) (uint64, error) {

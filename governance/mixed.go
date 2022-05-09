@@ -230,14 +230,6 @@ func (e *MixedEngine) SetTxPool(txpool txPool) {
 	e.defaultGov.SetTxPool(txpool)
 }
 
-func (e *MixedEngine) GovernanceMode() string {
-	return e.defaultGov.GovernanceMode()
-}
-
-func (e *MixedEngine) GoverningNode() common.Address {
-	return e.defaultGov.GoverningNode()
-}
-
 func (e *MixedEngine) UnitPrice() uint64 {
 	return e.defaultGov.UnitPrice()
 }
