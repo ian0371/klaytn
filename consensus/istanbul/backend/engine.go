@@ -622,15 +622,20 @@ func (sb *backend) initSnapshot(chain consensus.ChainReader) (*Snapshot, error) 
 		return nil, err
 	}
 
-	proposerPolicy, ok := sb.governance.GetGovernanceValue(params.Policy).(uint64)
-	if !ok {
+	var proposerPolicy, committeeSize uint64
+	govParams := sb.governance.Params()
+	if v, ok := govParams.Get(params.Policy); ok {
+		proposerPolicy = v.(uint64)
+	} else {
 		proposerPolicy = params.DefaultProposerPolicy
 	}
-	committeeSize, ok := sb.governance.GetGovernanceValue(params.CommitteeSize).(uint64)
-	if !ok {
+	if v, ok := govParams.Get(params.CommitteeSize); ok {
+		committeeSize = v.(uint64)
+	} else {
 		committeeSize = params.DefaultSubGroupSize
 	}
-	snap := newSnapshot(sb.governance, 0, genesis.Hash(), validator.NewValidatorSet(istanbulExtra.Validators, nil, istanbul.ProposerPolicy(proposerPolicy), committeeSize, chain), chain.Config())
+	valSet := validator.NewValidatorSet(istanbulExtra.Validators, nil, istanbul.ProposerPolicy(proposerPolicy), committeeSize, chain)
+	snap := newSnapshot(sb.governance, 0, genesis.Hash(), valSet, chain.Config())
 
 	if err := snap.store(sb.db); err != nil {
 		return nil, err

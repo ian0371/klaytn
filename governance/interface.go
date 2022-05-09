@@ -103,5 +103,4 @@ type HeaderEngine interface {
 	Ratio() string
 	StakingUpdateInterval() uint64
 	UseGiniCoeff() bool
-	GetGovernanceValue(key int) interface{}
 }

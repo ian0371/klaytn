@@ -281,7 +281,3 @@ func (e *MixedEngine) StakingUpdateInterval() uint64 {
 func (e *MixedEngine) UseGiniCoeff() bool {
 	return e.defaultGov.UseGiniCoeff()
 }
-
-func (e *MixedEngine) GetGovernanceValue(key int) interface{} {
-	return e.defaultGov.GetGovernanceValue(key)
-}
