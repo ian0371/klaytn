@@ -453,6 +453,11 @@ func (sb *backend) Finalize(chain consensus.ChainReader, header *types.Header, s
 
 	header.Root = state.IntermediateRoot(true)
 
+	if err := sb.governance.UpdateParams(); err != nil {
+		return nil, err
+	}
+	logger.Info("Updated governance parameters to latest", "header.Number", header.Number.Uint64())
+
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, receipts), nil
 }
