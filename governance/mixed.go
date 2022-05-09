@@ -72,7 +72,15 @@ func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	return params.NewGovParamSetStrMap(strMap)
+
+	govParams, err := params.NewGovParamSetStrMap(strMap)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use ReadGovernance(), fallback to initialParams.
+	p = params.NewGovParamSetMerged(e.initialParams, govParams)
+	return p, nil
 }
 
 func (e *MixedEngine) UpdateParams() error {
@@ -81,7 +89,9 @@ func (e *MixedEngine) UpdateParams() error {
 	if err != nil {
 		return err
 	}
-	e.currentParams = govParams
+
+	// Use CurrentSet(), fallback to initialParams.
+	e.currentParams = params.NewGovParamSetMerged(e.initialParams, govParams)
 	return nil
 }
 
