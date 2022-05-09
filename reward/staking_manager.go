@@ -209,9 +209,10 @@ func handleChainHeadEvent() {
 		select {
 		// Handle ChainHeadEvent
 		case ev := <-stakingManager.chainHeadChan:
-			if stakingManager.governanceHelper.ProposerPolicy() == params.WeightedRandom {
+			govParams := stakingManager.governanceHelper.Params()
+			if govParams.Policy() == params.WeightedRandom {
 				// check and update if staking info is not valid before for the next update interval blocks
-				stakingInfo := GetStakingInfo(ev.Block.NumberU64() + params.StakingUpdateInterval())
+				stakingInfo := GetStakingInfo(ev.Block.NumberU64() + govParams.StakeUpdateInterval())
 				if stakingInfo == nil {
 					logger.Error("unable to fetch staking info", "blockNum", ev.Block.NumberU64())
 				}

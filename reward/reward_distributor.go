@@ -34,11 +34,6 @@ type BalanceAdder interface {
 type governanceHelper interface {
 	Params() *params.GovParamSet
 	ParamsAt(num uint64) (*params.GovParamSet, error)
-	Epoch() uint64
-	GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error)
-	DeferredTxFee() bool
-	ProposerPolicy() uint64
-	StakingUpdateInterval() uint64
 }
 
 type RewardDistributor struct {
@@ -83,7 +78,7 @@ func (rd *RewardDistributor) DistributeBlockReward(b BalanceAdder, header *types
 
 	// Calculate total tx fee
 	totalTxFee := common.Big0
-	if rd.gh.DeferredTxFee() {
+	if rd.gh.Params().DeferredTxFee() {
 		totalTxFee = rd.getTotalTxFee(header, rewardConfig)
 	}
 
