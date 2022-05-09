@@ -105,5 +105,4 @@ type HeaderEngine interface {
 	UseGiniCoeff() bool
 	GetGovernanceValue(key int) interface{}
 	GetGovernanceItemAtNumber(num uint64, key string) (interface{}, error)
-	GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error)
 }

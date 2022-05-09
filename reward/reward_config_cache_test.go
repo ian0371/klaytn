@@ -17,7 +17,6 @@
 package reward
 
 import (
-	"errors"
 	"math/big"
 	"testing"
 
@@ -57,14 +56,6 @@ func (governance *testGovernance) ParamsAt(num uint64) (*params.GovParamSet, err
 
 func (governance *testGovernance) Epoch() uint64 {
 	return governance.p.Epoch()
-}
-
-func (governance *testGovernance) GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error) {
-	if v, ok := governance.p.Get(key); ok {
-		return v, nil
-	} else {
-		return nil, errors.New("Unhandled key on testGovernance")
-	}
 }
 
 func (governance *testGovernance) ProposerPolicy() uint64 {

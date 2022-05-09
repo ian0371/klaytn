@@ -289,7 +289,3 @@ func (e *MixedEngine) GetGovernanceValue(key int) interface{} {
 func (e *MixedEngine) GetGovernanceItemAtNumber(num uint64, key string) (interface{}, error) {
 	return e.defaultGov.GetGovernanceItemAtNumber(num, key)
 }
-
-func (e *MixedEngine) GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error) {
-	return e.defaultGov.GetItemAtNumberByIntKey(num, key)
-}
