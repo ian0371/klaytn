@@ -204,11 +204,8 @@ func (s *Snapshot) apply(headers []*types.Header, gov governance.Engine, addr co
 				return nil, err
 			}
 
-			isSingle, govNode, err := gov.GetGoverningInfoAtNumber(number)
-			if err != nil {
-				return nil, err
-			}
-
+			isSingle := govParams.GovernanceMode() == "single"
+			govNode := govParams.GoverningNode()
 			minStaking := govParams.MinimumStakeBig().Uint64()
 
 			pHeader := chain.GetHeaderByNumber(params.CalcProposerBlockNumber(number + 1))

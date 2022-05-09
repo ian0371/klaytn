@@ -293,7 +293,3 @@ func (e *MixedEngine) GetGovernanceItemAtNumber(num uint64, key string) (interfa
 func (e *MixedEngine) GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error) {
 	return e.defaultGov.GetItemAtNumberByIntKey(num, key)
 }
-
-func (e *MixedEngine) GetGoverningInfoAtNumber(num uint64) (bool, common.Address, error) {
-	return e.defaultGov.GetGoverningInfoAtNumber(num)
-}
