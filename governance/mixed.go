@@ -9,6 +9,10 @@ import (
 )
 
 type MixedEngine struct {
+	initialConfig *params.ChainConfig
+	initialParams *params.GovParamSet
+	currentParams *params.GovParamSet
+
 	// Subordinate engines
 	// TODO: Add ContractEngine
 	defaultGov HeaderEngine
@@ -18,6 +22,13 @@ type MixedEngine struct {
 // Only if doInit is true, subordinate engines will be initialized.
 func newMixedEngine(config *params.ChainConfig, db database.DBManager, doInit bool) *MixedEngine {
 	e := &MixedEngine{}
+
+	if govParams, err := params.NewGovParamSetChainConfig(config); err == nil {
+		e.initialConfig = config
+		e.initialParams = govParams
+	} else {
+		logger.Crit("Error parsing ChainConfig")
+	}
 
 	// Setup subordinate engines
 	if doInit {
@@ -51,6 +62,28 @@ func NewMixedEngineNoInit(config *params.ChainConfig, db database.DBManager) *Mi
 //         return params.NewGovParamSetStrMap(sm)
 //     }
 // }
+
+func (e *MixedEngine) Params() *params.GovParamSet {
+	return e.currentParams
+}
+
+func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
+	_, strMap, err := e.defaultGov.ReadGovernance(num)
+	if err != nil {
+		return nil, err
+	}
+	return params.NewGovParamSetStrMap(strMap)
+}
+
+func (e *MixedEngine) UpdateParams() error {
+	strMap := e.defaultGov.CurrentSet()
+	govParams, err := params.NewGovParamSetStrMap(strMap)
+	if err != nil {
+		return err
+	}
+	e.currentParams = govParams
+	return nil
+}
 
 // Pass-through to HeaderEngine
 func (e *MixedEngine) AddVote(key string, val interface{}) bool {

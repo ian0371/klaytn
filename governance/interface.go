@@ -25,7 +25,17 @@ import (
 )
 
 type Engine interface {
+	ReaderEngine
 	HeaderEngine
+}
+
+type ReaderEngine interface {
+	Params() *params.GovParamSet
+	ParamsAt(num uint64) (*params.GovParamSet, error)
+
+	// Refresh currentParams (which returned by Params())
+	// to the parameters at latest block number.
+	UpdateParams() error
 }
 
 type HeaderEngine interface {
