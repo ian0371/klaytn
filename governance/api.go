@@ -63,7 +63,7 @@ var (
 // TODO-Klaytn-Governance: Refine this API and consider the gas price of txpool
 func (api *GovernanceKlayAPI) GasPriceAt(num *rpc.BlockNumber) (*hexutil.Big, error) {
 	if num == nil || *num == rpc.LatestBlockNumber || *num == rpc.PendingBlockNumber {
-		ret := api.governance.UnitPrice()
+		ret := api.governance.Params().UnitPrice()
 		return (*hexutil.Big)(big.NewInt(0).SetUint64(ret)), nil
 	} else {
 		blockNum := num.Int64()

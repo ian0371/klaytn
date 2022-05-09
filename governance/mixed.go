@@ -230,10 +230,6 @@ func (e *MixedEngine) SetTxPool(txpool txPool) {
 	e.defaultGov.SetTxPool(txpool)
 }
 
-func (e *MixedEngine) UnitPrice() uint64 {
-	return e.defaultGov.UnitPrice()
-}
-
 func (e *MixedEngine) CommitteeSize() uint64 {
 	return e.defaultGov.CommitteeSize()
 }

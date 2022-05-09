@@ -90,7 +90,6 @@ type HeaderEngine interface {
 	SetTxPool(txpool txPool)
 
 	// Get network params
-	UnitPrice() uint64
 	CommitteeSize() uint64
 	Epoch() uint64
 	ProposerPolicy() uint64

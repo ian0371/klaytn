@@ -217,7 +217,7 @@ func New(ctx *node.ServiceContext, config *Config) (*CN, error) {
 	governance := governance.NewMixedEngine(chainConfig, chainDB)
 
 	// Set latest unitPrice/gasPrice
-	chainConfig.UnitPrice = governance.UnitPrice()
+	chainConfig.UnitPrice = governance.Params().UnitPrice()
 	config.GasPrice = new(big.Int).SetUint64(chainConfig.UnitPrice)
 	logger.Info("Initialised chain configuration", "config", chainConfig)
 
