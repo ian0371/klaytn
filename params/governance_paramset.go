@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/klaytn/klaytn/common"
+	"github.com/klaytn/klaytn/log"
 )
 
 type govParamType struct {
@@ -278,6 +279,19 @@ func NewGovParamSetIntMap(items map[int]interface{}) (*GovParamSet, error) {
 	return p, nil
 }
 
+// Return a new GovParamSet that contains keys from both input sets.
+// If a key belongs to both sets, the value from `update` is used.
+func NewGovParamSetMerged(base *GovParamSet, update *GovParamSet) *GovParamSet {
+	p := NewGovParamSet()
+	for key, value := range base.items {
+		p.items[key] = value
+	}
+	for key, value := range update.items {
+		p.items[key] = value
+	}
+	return p
+}
+
 func NewGovParamSetChainConfig(config *ChainConfig) (*GovParamSet, error) {
 	items := make(map[int]interface{})
 	if config.Istanbul != nil {
@@ -340,4 +354,83 @@ func (p *GovParamSet) IntMap() map[int]interface{} {
 func (p *GovParamSet) Get(key int) (interface{}, bool) {
 	v, ok := p.items[key]
 	return v, ok
+}
+
+func (p *GovParamSet) MustGet(key int) interface{} {
+	if v, ok := p.Get(key); ok {
+		return v
+	} else {
+		logger := log.NewModuleLogger(log.Governance)
+		logger.Error("Cannot get GovParam", "key", key, "name", govParamNamesReverse[key])
+		return nil
+	}
+}
+
+// Nominal getters. Shortcut for MustGet() + type assertion.
+// These could cause panic in case the value does not exist.
+
+func (p *GovParamSet) GovernanceMode() string {
+	return p.MustGet(GovernanceMode).(string)
+}
+
+func (p *GovParamSet) GoverningNode() common.Address {
+	return p.MustGet(GoverningNode).(common.Address)
+}
+
+func (p *GovParamSet) Epoch() uint64 {
+	return p.MustGet(Epoch).(uint64)
+}
+
+func (p *GovParamSet) Policy() uint64 {
+	return p.MustGet(Policy).(uint64)
+}
+
+func (p *GovParamSet) CommitteeSize() uint64 {
+	return p.MustGet(CommitteeSize).(uint64)
+}
+
+func (p *GovParamSet) UnitPrice() uint64 {
+	return p.MustGet(UnitPrice).(uint64)
+}
+
+func (p *GovParamSet) MintingAmountStr() string {
+	return p.MustGet(MintingAmount).(string)
+}
+
+func (p *GovParamSet) MintingAmountBig() *big.Int {
+	n, _ := new(big.Int).SetString(p.MintingAmountStr(), 10)
+	return n
+}
+
+func (p *GovParamSet) Ratio() string {
+	return p.MustGet(Ratio).(string)
+}
+
+func (p *GovParamSet) UseGiniCoeff() bool {
+	return p.MustGet(UseGiniCoeff).(bool)
+}
+
+func (p *GovParamSet) DeferredTxFee() bool {
+	return p.MustGet(DeferredTxFee).(bool)
+}
+
+func (p *GovParamSet) MinimumStakeStr() string {
+	return p.MustGet(MinimumStake).(string)
+}
+
+func (p *GovParamSet) MinimumStakeBig() *big.Int {
+	n, _ := new(big.Int).SetString(p.MinimumStakeStr(), 10)
+	return n
+}
+
+func (p *GovParamSet) StakeUpdateInterval() uint64 {
+	return p.MustGet(StakeUpdateInterval).(uint64)
+}
+
+func (p *GovParamSet) ProposerRefreshInterval() uint64 {
+	return p.MustGet(ProposerRefreshInterval).(uint64)
+}
+
+func (p *GovParamSet) Timeout() uint64 {
+	return p.MustGet(Timeout).(uint64)
 }
