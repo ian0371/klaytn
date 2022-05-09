@@ -79,7 +79,7 @@ func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 	}
 
 	// Use ReadGovernance(), fallback to initialParams.
-	p = params.NewGovParamSetMerged(e.initialParams, govParams)
+	p := params.NewGovParamSetMerged(e.initialParams, govParams)
 	return p, nil
 }
 
