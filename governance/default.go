@@ -1169,6 +1169,10 @@ func (g *Governance) GetGovernanceTalliesCopy() []GovernanceTallyItem {
 	return g.GovernanceTallies.Copy()
 }
 
+func (gov *Governance) CurrentSet() map[string]interface{} {
+	return gov.currentSet.Items()
+}
+
 func (gov *Governance) PendingChanges() map[string]interface{} {
 	return gov.changeSet.Items()
 }

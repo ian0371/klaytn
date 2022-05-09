@@ -126,6 +126,10 @@ func (e *MixedEngine) GetGovernanceTalliesCopy() []GovernanceTallyItem {
 	return e.defaultGov.GetGovernanceTalliesCopy()
 }
 
+func (e *MixedEngine) CurrentSet() map[string]interface{} {
+	return e.defaultGov.CurrentSet()
+}
+
 func (e *MixedEngine) PendingChanges() map[string]interface{} {
 	return e.defaultGov.PendingChanges()
 }

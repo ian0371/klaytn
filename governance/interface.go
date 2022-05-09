@@ -60,6 +60,7 @@ type HeaderEngine interface {
 	InitialChainConfig() *params.ChainConfig
 	GetVoteMapCopy() map[string]VoteStatus
 	GetGovernanceTalliesCopy() []GovernanceTallyItem
+	CurrentSet() map[string]interface{}
 	PendingChanges() map[string]interface{}
 	Votes() []GovernanceVote
 	IdxCache() []uint64
