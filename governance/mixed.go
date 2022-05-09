@@ -26,6 +26,7 @@ func newMixedEngine(config *params.ChainConfig, db database.DBManager, doInit bo
 	if govParams, err := params.NewGovParamSetChainConfig(config); err == nil {
 		e.initialConfig = config
 		e.initialParams = govParams
+		e.currentParams = govParams
 	} else {
 		logger.Crit("Error parsing ChainConfig")
 	}
