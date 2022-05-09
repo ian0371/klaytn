@@ -297,7 +297,3 @@ func (e *MixedEngine) GetItemAtNumberByIntKey(num uint64, key int) (interface{},
 func (e *MixedEngine) GetGoverningInfoAtNumber(num uint64) (bool, common.Address, error) {
 	return e.defaultGov.GetGoverningInfoAtNumber(num)
 }
-
-func (e *MixedEngine) GetMinimumStakingAtNumber(num uint64) (uint64, error) {
-	return e.defaultGov.GetMinimumStakingAtNumber(num)
-}

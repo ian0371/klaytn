@@ -107,5 +107,4 @@ type HeaderEngine interface {
 	GetGovernanceItemAtNumber(num uint64, key string) (interface{}, error)
 	GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error)
 	GetGoverningInfoAtNumber(num uint64) (bool, common.Address, error)
-	GetMinimumStakingAtNumber(num uint64) (uint64, error)
 }

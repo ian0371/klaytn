@@ -199,15 +199,17 @@ func (s *Snapshot) apply(headers []*types.Header, gov governance.Engine, addr co
 			//
 			// Proposers for Block N+1 can be calculated from the nearest previous proposersUpdateInterval block.
 			// Refresh proposers in Snapshot_N using previous proposersUpdateInterval block for N+1, if not updated yet.
+			govParams, err := gov.ParamsAt(number)
+			if err != nil {
+				return nil, err
+			}
+
 			isSingle, govNode, err := gov.GetGoverningInfoAtNumber(number)
 			if err != nil {
 				return nil, err
 			}
 
-			minStaking, err := gov.GetMinimumStakingAtNumber(number)
-			if err != nil {
-				return nil, err
-			}
+			minStaking := govParams.MinimumStakeBig().Uint64()
 
 			pHeader := chain.GetHeaderByNumber(params.CalcProposerBlockNumber(number + 1))
 			if pHeader != nil {
