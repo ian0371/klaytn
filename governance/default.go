@@ -1089,7 +1089,7 @@ func writeFailLog(key int, err error) {
 	logger.Crit(msg, "err", err)
 }
 
-func AddGovernanceCacheForTest(e Engine, num uint64, config *params.ChainConfig) {
+func AddGovernanceCacheForTest(e interface{}, num uint64, config *params.ChainConfig) {
 	// addGovernanceCache only exists and relevant in *Governance.
 	if g, ok := e.(*Governance); ok {
 		data := GetGovernanceItemsFromChainConfig(config)
