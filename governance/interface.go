@@ -104,5 +104,4 @@ type HeaderEngine interface {
 	StakingUpdateInterval() uint64
 	UseGiniCoeff() bool
 	GetGovernanceValue(key int) interface{}
-	GetGovernanceItemAtNumber(num uint64, key string) (interface{}, error)
 }

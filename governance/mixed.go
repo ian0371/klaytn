@@ -285,7 +285,3 @@ func (e *MixedEngine) UseGiniCoeff() bool {
 func (e *MixedEngine) GetGovernanceValue(key int) interface{} {
 	return e.defaultGov.GetGovernanceValue(key)
 }
-
-func (e *MixedEngine) GetGovernanceItemAtNumber(num uint64, key string) (interface{}, error) {
-	return e.defaultGov.GetGovernanceItemAtNumber(num, key)
-}

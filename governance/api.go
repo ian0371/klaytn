@@ -233,12 +233,11 @@ func (api *PublicGovernanceAPI) isGovernanceModeBallot() bool {
 }
 
 func (api *GovernanceKlayAPI) GasPriceAtNumber(num int64) (uint64, error) {
-	val, err := api.governance.GetGovernanceItemAtNumber(uint64(num), GovernanceKeyMapReverse[params.UnitPrice])
+	govParams, err := api.governance.ParamsAt(uint64(num))
 	if err != nil {
-		logger.Error("Failed to retrieve unit price", "err", err)
 		return 0, err
 	}
-	return val.(uint64), nil
+	return govParams.UnitPrice(), nil
 }
 
 // Disabled APIs

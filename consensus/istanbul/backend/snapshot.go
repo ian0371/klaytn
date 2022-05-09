@@ -52,25 +52,16 @@ type Snapshot struct {
 }
 
 func getGovernanceValue(gov governance.Engine, number uint64) (epoch uint64, policy uint64, committeeSize uint64) {
-	if r, err := gov.GetGovernanceItemAtNumber(number, governance.GovernanceKeyMapReverse[params.Epoch]); err == nil && r != nil {
-		epoch = r.(uint64)
-	} else {
-		logger.Error("Couldn't get governance value istanbul.epoch", "err", err, "received", r)
+	govParams, err := gov.ParamsAt(number)
+	if err != nil {
+		logger.Error("Couldn't get governance value. Resorting to defaults.", "err", err)
 		epoch = params.DefaultEpoch
-	}
-
-	if r, err := gov.GetGovernanceItemAtNumber(number, governance.GovernanceKeyMapReverse[params.Policy]); err == nil && r != nil {
-		policy = r.(uint64)
-	} else {
-		logger.Error("Couldn't get governance value istanbul.policy", "err", err, "received", r)
 		policy = params.DefaultProposerPolicy
-	}
-
-	if r, err := gov.GetGovernanceItemAtNumber(number, governance.GovernanceKeyMapReverse[params.CommitteeSize]); err == nil && r != nil {
-		committeeSize = r.(uint64)
-	} else {
-		logger.Error("Couldn't get governance value istanbul.committeesize", "err", err, "received", r)
 		committeeSize = params.DefaultSubGroupSize
+	} else {
+		epoch = govParams.Epoch()
+		policy = govParams.Policy()
+		committeeSize = govParams.CommitteeSize()
 	}
 	return
 }

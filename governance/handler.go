@@ -538,19 +538,3 @@ func (gov *Governance) removeVotesFromRemovedNode(votes []GovernanceVote, addr c
 	}
 	return ret
 }
-
-func (gov *Governance) GetGovernanceItemAtNumber(num uint64, key string) (interface{}, error) {
-	_, data, err := gov.ReadGovernance(num)
-	if err != nil {
-		return nil, err
-	}
-
-	if item, ok := data[key]; ok {
-		if item == nil {
-			return nil, ErrItemNil
-		}
-		return item, nil
-	} else {
-		return nil, ErrItemNotFound
-	}
-}
