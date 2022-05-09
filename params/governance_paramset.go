@@ -369,8 +369,12 @@ func (p *GovParamSet) MustGet(key int) interface{} {
 // Nominal getters. Shortcut for MustGet() + type assertion.
 // These could cause panic in case the value does not exist.
 
-func (p *GovParamSet) GovernanceMode() string {
+func (p *GovParamSet) GovernanceModeStr() string {
 	return p.MustGet(GovernanceMode).(string)
+}
+
+func (p *GovParamSet) GovernanceModeInt() int {
+	return govModeNames[p.GovernanceModeStr()]
 }
 
 func (p *GovParamSet) GoverningNode() common.Address {

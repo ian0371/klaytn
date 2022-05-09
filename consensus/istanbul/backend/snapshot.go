@@ -195,7 +195,7 @@ func (s *Snapshot) apply(headers []*types.Header, gov governance.Engine, addr co
 				return nil, err
 			}
 
-			isSingle := govParams.GovernanceMode() == "single"
+			isSingle := (govParams.GovernanceModeInt() == params.GovernanceMode_Single)
 			govNode := govParams.GoverningNode()
 			minStaking := govParams.MinimumStakeBig().Uint64()
 

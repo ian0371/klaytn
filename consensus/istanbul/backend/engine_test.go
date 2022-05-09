@@ -1115,7 +1115,7 @@ func TestGovernance_Votes(t *testing.T) {
 
 		// test initial governance items
 		assert.Equal(t, uint64(3), engine.governance.Params().Epoch())
-		assert.Equal(t, "single", engine.governance.Params().GovernanceMode())
+		assert.Equal(t, "single", engine.governance.Params().GovernanceModeStr())
 		assert.Equal(t, uint64(21), engine.governance.Params().CommitteeSize())
 		assert.Equal(t, uint64(1), engine.governance.Params().UnitPrice())
 		assert.Equal(t, "0", engine.governance.Params().MintingAmountStr())
