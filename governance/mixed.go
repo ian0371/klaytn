@@ -37,6 +37,9 @@ func newMixedEngine(config *params.ChainConfig, db database.DBManager, doInit bo
 	} else {
 		e.defaultGov = NewGovernance(config, db)
 	}
+
+	// Load last state
+	e.UpdateParams()
 	return e
 }
 
