@@ -22,6 +22,7 @@ import (
 	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/common"
 	"github.com/klaytn/klaytn/log"
+	"github.com/klaytn/klaytn/params"
 )
 
 var logger = log.NewModuleLogger(log.Reward)
@@ -31,6 +32,8 @@ type BalanceAdder interface {
 }
 
 type governanceHelper interface {
+	Params() *params.GovParamSet
+	ParamsAt(num uint64) (*params.GovParamSet, error)
 	Epoch() uint64
 	GetItemAtNumberByIntKey(num uint64, key int) (interface{}, error)
 	DeferredTxFee() bool
