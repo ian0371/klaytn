@@ -269,7 +269,7 @@ func New(ctx *node.ServiceContext, config *Config) (*CN, error) {
 		cn.blockchain.Config().Istanbul.ProposerPolicy = governance.Params().Policy()
 	}
 	if cn.blockchain.Config().Governance.Reward != nil {
-		cn.blockchain.Config().Governance.Reward.UseGiniCoeff = governance.UseGiniCoeff()
+		cn.blockchain.Config().Governance.Reward.UseGiniCoeff = governance.Params().UseGiniCoeff()
 	}
 
 	if config.SenderTxHashIndexing {

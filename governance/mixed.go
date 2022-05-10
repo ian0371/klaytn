@@ -233,10 +233,6 @@ func (e *MixedEngine) SetTxPool(txpool txPool) {
 	e.defaultGov.SetTxPool(txpool)
 }
 
-func (e *MixedEngine) DeferredTxFee() bool {
-	return e.defaultGov.DeferredTxFee()
-}
-
 func (e *MixedEngine) MinimumStake() string {
 	return e.defaultGov.MinimumStake()
 }
@@ -255,8 +251,4 @@ func (e *MixedEngine) Ratio() string {
 
 func (e *MixedEngine) StakingUpdateInterval() uint64 {
 	return e.defaultGov.StakingUpdateInterval()
-}
-
-func (e *MixedEngine) UseGiniCoeff() bool {
-	return e.defaultGov.UseGiniCoeff()
 }

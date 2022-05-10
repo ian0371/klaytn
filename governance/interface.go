@@ -90,11 +90,9 @@ type HeaderEngine interface {
 	SetTxPool(txpool txPool)
 
 	// Get network params
-	DeferredTxFee() bool
 	MinimumStake() string
 	MintingAmount() string
 	ProposerUpdateInterval() uint64
 	Ratio() string
 	StakingUpdateInterval() uint64
-	UseGiniCoeff() bool
 }
