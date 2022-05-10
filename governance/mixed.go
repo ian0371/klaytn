@@ -232,23 +232,3 @@ func (e *MixedEngine) SetBlockchain(chain blockChain) {
 func (e *MixedEngine) SetTxPool(txpool txPool) {
 	e.defaultGov.SetTxPool(txpool)
 }
-
-func (e *MixedEngine) MinimumStake() string {
-	return e.defaultGov.MinimumStake()
-}
-
-func (e *MixedEngine) MintingAmount() string {
-	return e.defaultGov.MintingAmount()
-}
-
-func (e *MixedEngine) ProposerUpdateInterval() uint64 {
-	return e.defaultGov.ProposerUpdateInterval()
-}
-
-func (e *MixedEngine) Ratio() string {
-	return e.defaultGov.Ratio()
-}
-
-func (e *MixedEngine) StakingUpdateInterval() uint64 {
-	return e.defaultGov.StakingUpdateInterval()
-}

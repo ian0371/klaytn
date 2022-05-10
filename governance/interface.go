@@ -88,11 +88,4 @@ type HeaderEngine interface {
 	SetMyVotingPower(t uint64)
 	SetBlockchain(chain blockChain)
 	SetTxPool(txpool txPool)
-
-	// Get network params
-	MinimumStake() string
-	MintingAmount() string
-	ProposerUpdateInterval() uint64
-	Ratio() string
-	StakingUpdateInterval() uint64
 }
