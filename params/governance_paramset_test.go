@@ -152,6 +152,8 @@ func TestGovParamSet_Nominal(t *testing.T) {
 	assert.Equal(t, c.UnitPrice, p.UnitPrice())
 	assert.Equal(t, c.Governance.GovernanceMode, p.GovernanceModeStr())
 	assert.Equal(t, c.Governance.GoverningNode, p.GoverningNode())
+	assert.Equal(t, c.Governance.GovernanceGen, p.GovernanceGenStr())
+	assert.Equal(t, c.Governance.GovParamsContract, p.GovParamsContract())
 	assert.Equal(t, c.Governance.Reward.MintingAmount.String(), p.MintingAmountStr())
 	assert.Equal(t, c.Governance.Reward.MintingAmount, p.MintingAmountBig())
 	assert.Equal(t, c.Governance.Reward.Ratio, p.Ratio())

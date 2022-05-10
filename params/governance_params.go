@@ -65,12 +65,19 @@ const (
 	ConstTxGasHumanReadable
 	CliqueEpoch
 	Timeout
+	GovernanceGen
+	GovParamsContract
 )
 
 const (
 	GovernanceMode_None = iota
 	GovernanceMode_Single
 	GovernanceMode_Ballot
+)
+
+const (
+	GovernanceGen_Header = iota
+	GovernanceGen_Contract
 )
 
 const (

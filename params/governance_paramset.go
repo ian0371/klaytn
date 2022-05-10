@@ -66,6 +66,11 @@ var (
 		"ballot": GovernanceMode_Ballot,
 	}
 
+	govGenNames = map[string]int{
+		"header":   GovernanceGen_Header,
+		"contract": GovernanceGen_Contract,
+	}
+
 	parseValueString = func(v interface{}) (interface{}, bool) {
 		s, ok := v.(string)
 		return s, ok
@@ -85,6 +90,16 @@ var (
 		parseBytes:    parseBytesString,
 		validate: func(v interface{}) bool {
 			_, ok := govModeNames[v.(string)]
+			return ok
+		},
+	}
+
+	govParamTypeGovGen = &govParamType{
+		canonicalType: reflect.TypeOf("header"),
+		parseValue:    parseValueString,
+		parseBytes:    parseBytesString,
+		validate: func(v interface{}) bool {
+			_, ok := govGenNames[v.(string)]
 			return ok
 		},
 	}
@@ -209,6 +224,8 @@ var govParamTypes = map[int]*govParamType{
 	MinimumStake:            govParamTypeBigInt,
 	StakeUpdateInterval:     govParamTypeUint64,
 	ProposerRefreshInterval: govParamTypeUint64,
+	GovernanceGen:           govParamTypeGovGen,
+	GovParamsContract:       govParamTypeAddress,
 }
 
 var govParamNames = map[string]int{
@@ -225,6 +242,8 @@ var govParamNames = map[string]int{
 	"reward.minimumstake":           MinimumStake,
 	"reward.stakingupdateinterval":  StakeUpdateInterval,
 	"reward.proposerupdateinterval": ProposerRefreshInterval,
+	"governance.governancegen":      GovernanceGen,
+	"governance.govparamscontract":  GovParamsContract,
 }
 
 var govParamNamesReverse = map[int]string{}
@@ -303,6 +322,8 @@ func NewGovParamSetChainConfig(config *ChainConfig) (*GovParamSet, error) {
 	if config.Governance != nil {
 		items[GoverningNode] = config.Governance.GoverningNode
 		items[GovernanceMode] = config.Governance.GovernanceMode
+		items[GovernanceGen] = config.Governance.GovernanceGen
+		items[GovParamsContract] = config.Governance.GovParamsContract
 		if config.Governance.Reward != nil {
 			if config.Governance.Reward.MintingAmount != nil {
 				items[MintingAmount] = config.Governance.Reward.MintingAmount.String()
@@ -437,4 +458,16 @@ func (p *GovParamSet) ProposerRefreshInterval() uint64 {
 
 func (p *GovParamSet) Timeout() uint64 {
 	return p.MustGet(Timeout).(uint64)
+}
+
+func (p *GovParamSet) GovernanceGenStr() string {
+	return p.MustGet(GovernanceGen).(string)
+}
+
+func (p *GovParamSet) GovernanceGenInt() int {
+	return govGenNames[p.GovernanceGenStr()]
+}
+
+func (p *GovParamSet) GovParamsContract() common.Address {
+	return p.MustGet(GovParamsContract).(common.Address)
 }

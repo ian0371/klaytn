@@ -45,8 +45,10 @@ var (
 		EthTxTypeCompatibleBlock: big.NewInt(86816005),
 		DeriveShaImpl:            2,
 		Governance: &GovernanceConfig{
-			GoverningNode:  common.HexToAddress("0x52d41ca72af615a1ac3301b0a93efa222ecc7541"),
-			GovernanceMode: "single",
+			GoverningNode:     common.HexToAddress("0x52d41ca72af615a1ac3301b0a93efa222ecc7541"),
+			GovernanceMode:    "single",
+			GovernanceGen:     "header",
+			GovParamsContract: common.HexToAddress("0x0"),
 			Reward: &RewardConfig{
 				MintingAmount:          mintingAmount,
 				Ratio:                  "34/54/12",
@@ -73,8 +75,10 @@ var (
 		EthTxTypeCompatibleBlock: big.NewInt(86513895),
 		DeriveShaImpl:            2,
 		Governance: &GovernanceConfig{
-			GoverningNode:  common.HexToAddress("0x99fb17d324fa0e07f23b49d09028ac0919414db6"),
-			GovernanceMode: "single",
+			GoverningNode:     common.HexToAddress("0x99fb17d324fa0e07f23b49d09028ac0919414db6"),
+			GovernanceMode:    "single",
+			GovernanceGen:     "header",
+			GovParamsContract: common.HexToAddress("0x0"),
 			Reward: &RewardConfig{
 				MintingAmount:          mintingAmount,
 				Ratio:                  "34/54/12",
@@ -183,9 +187,11 @@ type ChainConfig struct {
 
 // GovernanceConfig stores governance information for a network
 type GovernanceConfig struct {
-	GoverningNode  common.Address `json:"governingNode"`
-	GovernanceMode string         `json:"governanceMode"`
-	Reward         *RewardConfig  `json:"reward,omitempty"`
+	GoverningNode     common.Address `json:"governingNode"`
+	GovernanceMode    string         `json:"governanceMode"`
+	GovernanceGen     string         `json:"governanceGen"`
+	GovParamsContract common.Address `json:"govParamsContract"`
+	Reward            *RewardConfig  `json:"reward,omitempty"`
 }
 
 func (g *GovernanceConfig) DeferredTxFee() bool {
