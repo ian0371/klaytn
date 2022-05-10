@@ -233,18 +233,6 @@ func (e *MixedEngine) SetTxPool(txpool txPool) {
 	e.defaultGov.SetTxPool(txpool)
 }
 
-func (e *MixedEngine) CommitteeSize() uint64 {
-	return e.defaultGov.CommitteeSize()
-}
-
-func (e *MixedEngine) Epoch() uint64 {
-	return e.defaultGov.Epoch()
-}
-
-func (e *MixedEngine) ProposerPolicy() uint64 {
-	return e.defaultGov.ProposerPolicy()
-}
-
 func (e *MixedEngine) DeferredTxFee() bool {
 	return e.defaultGov.DeferredTxFee()
 }

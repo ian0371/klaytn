@@ -266,7 +266,7 @@ func New(ctx *node.ServiceContext, config *Config) (*CN, error) {
 	governance.SetBlockchain(cn.blockchain)
 	// Synchronize proposerpolicy & useGiniCoeff
 	if cn.blockchain.Config().Istanbul != nil {
-		cn.blockchain.Config().Istanbul.ProposerPolicy = governance.ProposerPolicy()
+		cn.blockchain.Config().Istanbul.ProposerPolicy = governance.Params().Policy()
 	}
 	if cn.blockchain.Config().Governance.Reward != nil {
 		cn.blockchain.Config().Governance.Reward.UseGiniCoeff = governance.UseGiniCoeff()
@@ -310,7 +310,7 @@ func New(ctx *node.ServiceContext, config *Config) (*CN, error) {
 		logger.Error("Error happened while setting the reward wallet", "err", err)
 	}
 
-	if governance.ProposerPolicy() == uint64(istanbul.WeightedRandom) {
+	if governance.Params().Policy() == uint64(istanbul.WeightedRandom) {
 		// NewStakingManager is called with proper non-nil parameters
 		reward.NewStakingManager(cn.blockchain, governance, cn.chainDB)
 	}
