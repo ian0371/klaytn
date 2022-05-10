@@ -61,6 +61,7 @@ type proposerPolicy uint64
 type governanceMode string
 type epoch uint64
 type blockPeriod uint64
+type unitPrice uint64
 
 // makeCommittedSeals returns a list of committed seals for the global variable nodeKeys.
 func makeCommittedSeals(hash common.Hash) [][]byte {
@@ -107,6 +108,8 @@ func newBlockChain(n int, items ...interface{}) (*blockchain.BlockChain, *backen
 			genesis.Config.Governance.Reward.ProposerUpdateInterval = uint64(v)
 		case governanceMode:
 			genesis.Config.Governance.GovernanceMode = string(v)
+		case unitPrice:
+			genesis.Config.UnitPrice = uint64(v)
 		case *ecdsa.PrivateKey:
 			key = v
 		case blockPeriod:
@@ -1155,6 +1158,108 @@ func TestGovernance_Votes(t *testing.T) {
 			assert.Equal(t, item.value, items[item.key])
 		}
 
+		engine.Stop()
+	}
+}
+
+func TestGovernance_UpdateParams(t *testing.T) {
+	type vote struct {
+		key   string
+		value interface{}
+	}
+	type expected = map[string]interface{} // expected (subset of) governance items
+	type testcase struct {
+		length   int // total number of blocks to simulate
+		votes    map[int]vote
+		expected map[int]expected
+	}
+
+	testcases := []testcase{
+		{
+			9,
+			map[int]vote{
+				1: {"governance.unitprice", uint64(222)},
+			},
+			map[int]expected{
+				0: {"governance.unitprice": uint64(111)},
+				1: {"governance.unitprice": uint64(111)},
+				2: {"governance.unitprice": uint64(111)},
+				3: {"governance.unitprice": uint64(111)},
+				4: {"governance.unitprice": uint64(111)},
+				5: {"governance.unitprice": uint64(111)},
+				6: {"governance.unitprice": uint64(222)},
+				7: {"governance.unitprice": uint64(222)},
+				8: {"governance.unitprice": uint64(222)},
+			},
+		},
+	}
+
+	var configItems []interface{}
+	configItems = append(configItems, unitPrice(111))
+	configItems = append(configItems, proposerPolicy(params.WeightedRandom))
+	configItems = append(configItems, proposerUpdateInterval(1))
+	configItems = append(configItems, epoch(3))
+	configItems = append(configItems, governanceMode("single"))
+	configItems = append(configItems, minimumStake(new(big.Int).SetUint64(4000000)))
+	configItems = append(configItems, istanbulCompatibleBlock(new(big.Int).SetUint64(0)))
+	configItems = append(configItems, blockPeriod(0)) // set block period to 0 to prevent creating future block
+	stakes := []uint64{4000000, 4000000, 4000000, 4000000}
+
+	for _, tc := range testcases {
+		// Create test blockchain
+		chain, engine := newBlockChain(4, configItems...)
+
+		oldStakingManager := reward.GetStakingManager()
+		stakingInfo := makeFakeStakingInfo(0, nodeKeys, stakes)
+		reward.SetTestStakingManagerWithStakingInfoCache(stakingInfo)
+
+		var previousBlock, currentBlock *types.Block = nil, chain.Genesis()
+
+		// Create blocks with votes
+		for i := 0; i < tc.length; i++ {
+			headNum := int(currentBlock.Number().Uint64())
+			nextNum := headNum + 1
+
+			// Check parameter values after mining each block.
+			// Params() contains the parameter values that should be used
+			// to build the upcoming (next) block, not the last (head) block.
+			if e, ok := tc.expected[headNum]; ok {
+				items := engine.governance.Params().StrMap()
+				for k, v := range e {
+					assert.Equal(t, v, items[k])
+				}
+			}
+
+			// Place a vote if a vote is scheduled in upcoming block
+			if v, ok := tc.votes[nextNum]; ok {
+				engine.governance.AddVote(v.key, v.value)
+			}
+
+			// Create a block
+			previousBlock = currentBlock
+			currentBlock = makeBlockWithSeal(chain, engine, previousBlock)
+			_, err := chain.InsertChain(types.Blocks{currentBlock})
+			assert.NoError(t, err)
+
+			// Load parameters for the next block
+			err = engine.governance.UpdateParams()
+			assert.NoError(t, err)
+		}
+
+		// Load historic parameters
+		for i := 0; i <= tc.length; i++ {
+			headNum := i
+			if e, ok := tc.expected[headNum]; ok {
+				govParams, err := engine.governance.ParamsAt(uint64(headNum))
+				assert.NoError(t, err)
+				items := govParams.StrMap()
+				for k, v := range e {
+					assert.Equal(t, v, items[k])
+				}
+			}
+		}
+
+		reward.SetTestStakingManager(oldStakingManager)
 		engine.Stop()
 	}
 }
