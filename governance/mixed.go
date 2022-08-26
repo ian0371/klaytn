@@ -33,6 +33,46 @@ type MixedEngine struct {
 	headerGov *Governance
 }
 
+const (
+	GovernanceMode int = iota
+	GoverningNode
+	Epoch
+	Policy
+	CommitteeSize
+	UnitPrice
+	MintingAmount
+	Ratio
+	UseGiniCoeff
+	DeferredTxFee
+	MinimumStake
+	StakeUpdateInterval
+	ProposerRefreshInterval
+	LowerBoundBaseFee
+	UpperBoundBaseFee
+	GasTarget
+	MaxBlockGasUsedForBaseFee
+	BaseFeeDenominator
+)
+
+type trigger func(p *params.GovParamSet)
+
+var handlers = map[int]trigger{
+	StakeUpdateInterval:     updateStakingUpdateInterval,
+	ProposerRefreshInterval: updateProposerUpdateInterval,
+}
+
+func updateStakingUpdateInterval(p *params.GovParamSet) {
+	params.SetStakingUpdateInterval(p.StakeUpdateInterval())
+}
+
+func updateProposerUpdateInterval(p *params.GovParamSet) {
+	params.SetProposerUpdateInterval(p.ProposerRefreshInterval())
+}
+
+func updateProposerPolicy(p *params.GovParamSet) {
+	g.blockChain.SetProposerPolicy(g.Params().Policy())
+}
+
 // newMixedEngine instantiate a new MixedEngine struct.
 // Only if doInit is true, subordinate engines will be initialized.
 func newMixedEngine(config *params.ChainConfig, db database.DBManager, doInit bool) *MixedEngine {
@@ -99,14 +139,12 @@ func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 }
 
 func (e *MixedEngine) UpdateParams() error {
-	if err := e.headerGov.UpdateParams(); err != nil {
-		return err
-	}
-
 	headerParams := e.headerGov.Params()
 
 	// TODO-Klaytn-Kore: merge contractParams
-	e.currentParams = e.assembleParams(headerParams)
+	newParams := e.assembleParams(headerParams)
+	e.handleParamUpdate(e.currentParams, newParams)
+
 	return nil
 }
 
@@ -117,6 +155,14 @@ func (e *MixedEngine) assembleParams(headerParams *params.GovParamSet) *params.G
 	p = params.NewGovParamSetMerged(p, e.initialParams)
 	p = params.NewGovParamSetMerged(p, headerParams)
 	return p
+}
+
+func (e *MixedEngine) handleParamUpdate(old, new *params.GovParamSet) error {
+	// TODO: key set should be the same, which is guaranteed at NewMixedEngine
+	for k, v := range old.IntMap() {
+		if v != new.MustGet(k) {
+		}
+	}
 }
 
 // Pass-through to HeaderEngine

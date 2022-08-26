@@ -60,7 +60,7 @@ var GovernanceItems = map[int]check{
 	params.UseGiniCoeff:              {boolT, checkUint64andBool, updateUseGiniCoeff},
 	params.DeferredTxFee:             {boolT, checkUint64andBool, nil},
 	params.MinimumStake:              {stringT, checkRewardMinimumStake, nil},
-	params.StakeUpdateInterval:       {uint64T, checkUint64andBool, updateStakingUpdateInterval},
+	params.StakeUpdateInterval:       {uint64T, checkUint64andBool, nil},
 	params.ProposerRefreshInterval:   {uint64T, checkUint64andBool, updateProposerUpdateInterval},
 	params.Epoch:                     {uint64T, checkUint64andBool, nil},
 	params.Policy:                    {uint64T, checkUint64andBool, updateProposerPolicy},
@@ -118,20 +118,6 @@ func updateUnitPrice(g *Governance, k string, v interface{}) {
 func updateUseGiniCoeff(g *Governance, k string, v interface{}) {
 	if g.blockChain != nil {
 		g.blockChain.SetUseGiniCoeff(g.Params().UseGiniCoeff())
-	}
-}
-
-func updateStakingUpdateInterval(g *Governance, k string, v interface{}) {
-	params.SetStakingUpdateInterval(g.Params().StakeUpdateInterval())
-}
-
-func updateProposerUpdateInterval(g *Governance, k string, v interface{}) {
-	params.SetProposerUpdateInterval(g.Params().ProposerRefreshInterval())
-}
-
-func updateProposerPolicy(g *Governance, k string, v interface{}) {
-	if g.blockChain != nil {
-		g.blockChain.SetProposerPolicy(g.Params().Policy())
 	}
 }
 
