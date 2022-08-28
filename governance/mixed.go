@@ -8,6 +8,8 @@ import (
 	"github.com/klaytn/klaytn/storage/database"
 )
 
+type handler func(p *params.GovParamSet)
+
 // Mixed engine consists of multiple governance engines
 //
 // Each parameter is added to a parameter set from one of the following sources:
@@ -31,6 +33,8 @@ type MixedEngine struct {
 	// Subordinate engines
 	// TODO: Add ContractEngine
 	headerGov *Governance
+
+	handlers map[int][]handler
 }
 
 const (
@@ -53,25 +57,6 @@ const (
 	MaxBlockGasUsedForBaseFee
 	BaseFeeDenominator
 )
-
-type trigger func(p *params.GovParamSet)
-
-var handlers = map[int]trigger{
-	StakeUpdateInterval:     updateStakingUpdateInterval,
-	ProposerRefreshInterval: updateProposerUpdateInterval,
-}
-
-func updateStakingUpdateInterval(p *params.GovParamSet) {
-	params.SetStakingUpdateInterval(p.StakeUpdateInterval())
-}
-
-func updateProposerUpdateInterval(p *params.GovParamSet) {
-	params.SetProposerUpdateInterval(p.ProposerRefreshInterval())
-}
-
-func updateProposerPolicy(p *params.GovParamSet) {
-	g.blockChain.SetProposerPolicy(g.Params().Policy())
-}
 
 // newMixedEngine instantiate a new MixedEngine struct.
 // Only if doInit is true, subordinate engines will be initialized.
@@ -111,6 +96,8 @@ func newMixedEngine(config *params.ChainConfig, db database.DBManager, doInit bo
 	// Load last state
 	e.UpdateParams()
 
+	e.handlers = make(map[int][]handler)
+
 	return e
 }
 
@@ -139,13 +126,22 @@ func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 }
 
 func (e *MixedEngine) UpdateParams() error {
+	if err := e.headerGov.UpdateParams(); err != nil {
+		return err
+	}
+
 	headerParams := e.headerGov.Params()
 
 	// TODO-Klaytn-Kore: merge contractParams
 	newParams := e.assembleParams(headerParams)
 	e.handleParamUpdate(e.currentParams, newParams)
+	e.currentParams = newParams
 
 	return nil
+}
+
+func (e *MixedEngine) RegisterHandler(key int, cb handler) {
+	e.handlers[key] = append(e.handlers[key], cb)
 }
 
 func (e *MixedEngine) assembleParams(headerParams *params.GovParamSet) *params.GovParamSet {
@@ -157,10 +153,13 @@ func (e *MixedEngine) assembleParams(headerParams *params.GovParamSet) *params.G
 	return p
 }
 
-func (e *MixedEngine) handleParamUpdate(old, new *params.GovParamSet) error {
+func (e *MixedEngine) handleParamUpdate(old, new *params.GovParamSet) {
 	// TODO: key set should be the same, which is guaranteed at NewMixedEngine
 	for k, v := range old.IntMap() {
 		if v != new.MustGet(k) {
+			for _, cb := range e.handlers[k] {
+				cb(new)
+			}
 		}
 	}
 }

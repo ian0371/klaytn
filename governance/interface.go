@@ -47,6 +47,8 @@ type ReaderEngine interface {
 	// This function must be called after every block is mined to
 	// guarantee that Params() works correctly.
 	UpdateParams() error
+
+	RegisterHandler(key int, cb handler)
 }
 
 type HeaderEngine interface {

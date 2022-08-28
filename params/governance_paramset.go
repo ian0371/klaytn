@@ -415,7 +415,7 @@ func (p *GovParamSet) MustGet(key int) interface{} {
 		return v
 	} else {
 		logger := log.NewModuleLogger(log.Governance)
-		logger.Crit("Attempted to get missing GovParam item", "key", key, "name", govParamNamesReverse[key])
+		logger.CritWithStack("Attempted to get missing GovParam item", "key", key, "name", govParamNamesReverse[key])
 		return nil
 	}
 }

@@ -1223,3 +1223,7 @@ func (gov *Governance) UpdateParams() error {
 	gov.currentParams = params.NewGovParamSetMerged(gov.initialParams, pset)
 	return nil
 }
+
+func (gov *Governance) RegisterHandler(key int, cb handler) {
+	// not used
+}
