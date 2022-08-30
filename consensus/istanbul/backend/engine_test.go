@@ -1674,11 +1674,21 @@ func TestChainConfig_UpdateAfterVotes(t *testing.T) {
 		chain, engine := newBlockChain(1, configItems...)
 
 		// test initial governance items
-		assert.Equal(t, uint64(25000000000), chain.Config().Governance.KIP71.LowerBoundBaseFee)
-		assert.Equal(t, uint64(750000000000), chain.Config().Governance.KIP71.UpperBoundBaseFee)
-		assert.Equal(t, uint64(20), chain.Config().Governance.KIP71.BaseFeeDenominator)
-		assert.Equal(t, uint64(60000000), chain.Config().Governance.KIP71.MaxBlockGasUsedForBaseFee)
-		assert.Equal(t, uint64(30000000), chain.Config().Governance.KIP71.GasTarget)
+		assert.Equal(t, params.DefaultLowerBoundBaseFee, engine.governance.Params().LowerBoundBaseFee())
+		assert.Equal(t, params.DefaultUpperBoundBaseFee, engine.governance.Params().UpperBoundBaseFee())
+		assert.Equal(t, params.DefaultBaseFeeDenominator, engine.governance.Params().BaseFeeDenominator())
+		assert.Equal(t, params.DefaultMaxBlockGasUsedForBaseFee, engine.governance.Params().MaxBlockGasUsedForBaseFee())
+		assert.Equal(t, params.DefaultGasTarget, engine.governance.Params().GasTarget())
+
+		engine.governance.RegisterHandlers([]int{
+			params.LowerBoundBaseFee,
+			params.UpperBoundBaseFee,
+			params.GasTarget,
+			params.MaxBlockGasUsedForBaseFee,
+			params.BaseFeeDenominator,
+		}, func(key int, p *params.GovParamSet) {
+			chain.ParamUpdateHandler(key, p)
+		})
 
 		// add votes and insert voted blocks
 		var (
@@ -1701,18 +1711,22 @@ func TestChainConfig_UpdateAfterVotes(t *testing.T) {
 			assert.NoError(t, err)
 		}
 
-		govConfig := chain.Config().Governance
 		switch tc.expected.key {
 		case "kip71.lowerboundbasefee":
-			assert.Equal(t, tc.expected.value, govConfig.KIP71.LowerBoundBaseFee)
+			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.LowerBoundBaseFee)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().LowerBoundBaseFee())
 		case "kip71.upperboundbasefee":
-			assert.Equal(t, tc.expected.value, govConfig.KIP71.UpperBoundBaseFee)
+			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.UpperBoundBaseFee)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().UpperBoundBaseFee())
 		case "kip71.gastarget":
-			assert.Equal(t, tc.expected.value, govConfig.KIP71.GasTarget)
+			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.GasTarget)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().GasTarget())
 		case "kip71.maxblockgasusedforbasefee":
-			assert.Equal(t, tc.expected.value, govConfig.KIP71.MaxBlockGasUsedForBaseFee)
+			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.MaxBlockGasUsedForBaseFee)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().MaxBlockGasUsedForBaseFee())
 		case "kip71.basefeedenominator":
-			assert.Equal(t, tc.expected.value, govConfig.KIP71.BaseFeeDenominator)
+			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.BaseFeeDenominator)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().BaseFeeDenominator())
 		default:
 			assert.Error(t, nil)
 		}
@@ -1761,11 +1775,21 @@ func TestChainConfig_ReadFromDBAfterVotes(t *testing.T) {
 		chain, engine := newBlockChain(1, configItems...)
 
 		// test initial governance items
-		assert.Equal(t, uint64(25000000000), chain.Config().Governance.KIP71.LowerBoundBaseFee)
-		assert.Equal(t, uint64(750000000000), chain.Config().Governance.KIP71.UpperBoundBaseFee)
-		assert.Equal(t, uint64(20), chain.Config().Governance.KIP71.BaseFeeDenominator)
-		assert.Equal(t, uint64(60000000), chain.Config().Governance.KIP71.MaxBlockGasUsedForBaseFee)
-		assert.Equal(t, uint64(30000000), chain.Config().Governance.KIP71.GasTarget)
+		assert.Equal(t, params.DefaultLowerBoundBaseFee, engine.governance.Params().LowerBoundBaseFee())
+		assert.Equal(t, params.DefaultUpperBoundBaseFee, engine.governance.Params().UpperBoundBaseFee())
+		assert.Equal(t, params.DefaultBaseFeeDenominator, engine.governance.Params().BaseFeeDenominator())
+		assert.Equal(t, params.DefaultMaxBlockGasUsedForBaseFee, engine.governance.Params().MaxBlockGasUsedForBaseFee())
+		assert.Equal(t, params.DefaultGasTarget, engine.governance.Params().GasTarget())
+
+		engine.governance.RegisterHandlers([]int{
+			params.LowerBoundBaseFee,
+			params.UpperBoundBaseFee,
+			params.GasTarget,
+			params.MaxBlockGasUsedForBaseFee,
+			params.BaseFeeDenominator,
+		}, func(key int, p *params.GovParamSet) {
+			chain.ParamUpdateHandler(key, p)
+		})
 
 		// add votes and insert voted blocks
 		var (
@@ -1791,14 +1815,19 @@ func TestChainConfig_ReadFromDBAfterVotes(t *testing.T) {
 		switch tc.expected.key {
 		case "kip71.lowerboundbasefee":
 			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.LowerBoundBaseFee)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().LowerBoundBaseFee())
 		case "kip71.upperboundbasefee":
 			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.UpperBoundBaseFee)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().UpperBoundBaseFee())
 		case "kip71.gastarget":
 			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.GasTarget)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().GasTarget())
 		case "kip71.maxblockgasusedforbasefee":
 			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.MaxBlockGasUsedForBaseFee)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().MaxBlockGasUsedForBaseFee())
 		case "kip71.basefeedenominator":
 			assert.Equal(t, tc.expected.value, chain.Config().Governance.KIP71.BaseFeeDenominator)
+			assert.Equal(t, tc.expected.value, engine.governance.Params().BaseFeeDenominator())
 		default:
 			assert.Error(t, nil)
 		}

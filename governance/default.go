@@ -1224,6 +1224,6 @@ func (gov *Governance) UpdateParams() error {
 	return nil
 }
 
-func (gov *Governance) RegisterHandler(key int, cb handler) {
+func (gov *Governance) RegisterHandlers(keys []int, cb handler) {
 	// not used
 }

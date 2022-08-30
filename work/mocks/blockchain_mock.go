@@ -885,6 +885,11 @@ func (mr *MockBlockChainMockRecorder) SetUpperBoundBaseFee(val interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUpperBoundBaseFee", reflect.TypeOf((*MockBlockChain)(nil).SetUpperBoundBaseFee), val)
 }
 
+func (m *MockBlockChain) ParamUpdateHandler(key int, p *params.GovParamSet) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ParamUpdateHandler", key, p)
+}
+
 // SetUseGiniCoeff mocks base method.
 func (m *MockBlockChain) SetUseGiniCoeff(val bool) {
 	m.ctrl.T.Helper()

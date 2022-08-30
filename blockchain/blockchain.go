@@ -428,6 +428,25 @@ func (bc *BlockChain) SetCanonicalBlock(blockNum uint64) {
 	logger.Info("successfully set the canonical block", "blockNum", blockNum)
 }
 
+func (bc *BlockChain) ParamUpdateHandler(key int, p *params.GovParamSet) {
+	switch key {
+	case params.Policy:
+		bc.SetProposerPolicy(p.Policy())
+	case params.UseGiniCoeff:
+		bc.SetUseGiniCoeff(p.UseGiniCoeff())
+	case params.LowerBoundBaseFee:
+		bc.SetLowerBoundBaseFee(p.LowerBoundBaseFee())
+	case params.UpperBoundBaseFee:
+		bc.SetUpperBoundBaseFee(p.UpperBoundBaseFee())
+	case params.GasTarget:
+		bc.SetGasTarget(p.GasTarget())
+	case params.MaxBlockGasUsedForBaseFee:
+		bc.SetMaxBlockGasUsedForBaseFee(p.MaxBlockGasUsedForBaseFee())
+	case params.BaseFeeDenominator:
+		bc.SetBaseFeeDenominator(p.BaseFeeDenominator())
+	}
+}
+
 func (bc *BlockChain) UseGiniCoeff() bool {
 	bc.chainConfigMu.RLock()
 	defer bc.chainConfigMu.RUnlock()

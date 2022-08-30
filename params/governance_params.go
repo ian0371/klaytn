@@ -148,6 +148,15 @@ func StakingUpdateInterval() uint64 {
 	return ret
 }
 
+func ParamUpdateHandler(key int, p *GovParamSet) {
+	switch key {
+	case StakeUpdateInterval:
+		SetStakingUpdateInterval(p.StakeUpdateInterval())
+	case ProposerRefreshInterval:
+		SetProposerUpdateInterval(p.ProposerRefreshInterval())
+	}
+}
+
 func SetProposerUpdateInterval(num uint64) {
 	atomic.StoreUint64(&proposerUpdateInterval, num)
 }

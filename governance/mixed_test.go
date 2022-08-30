@@ -54,9 +54,14 @@ func TestMixedEngine_Header_Params(t *testing.T) {
 	config.Istanbul.SubGroupSize = valueA
 	e, _, headerGov := newTestMixedEngine(t, config)
 
+	e.RegisterHandlers([]int{params.CommitteeSize}, func(key int, p *params.GovParamSet) {
+		config.Istanbul.SubGroupSize = p.CommitteeSize()
+	})
+
 	headerGov.currentSet.SetValue(params.CommitteeSize, valueB)
 	err := e.UpdateParams()
 	assert.Nil(t, err)
+	assert.Equal(t, valueB, config.Istanbul.SubGroupSize)
 
 	pset := e.Params()
 	assert.Equal(t, valueB, pset.CommitteeSize())

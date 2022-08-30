@@ -701,44 +701,29 @@ func (s *CN) Stop() error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Klaytn protocol.
 func (s *CN) RegisterParamUpdateHandlers() error {
-	s.governance.RegisterHandler(params.Policy, func(p *params.GovParamSet) {
-		s.blockchain.SetProposerPolicy(p.Policy())
+	s.governance.RegisterHandlers([]int{
+		params.Policy,
+		params.UseGiniCoeff,
+		params.LowerBoundBaseFee,
+		params.UpperBoundBaseFee,
+		params.GasTarget,
+		params.MaxBlockGasUsedForBaseFee,
+		params.BaseFeeDenominator,
+	}, func(key int, p *params.GovParamSet) {
+		s.blockchain.ParamUpdateHandler(key, p)
 	})
 
-	s.governance.RegisterHandler(params.UseGiniCoeff, func(p *params.GovParamSet) {
-		s.blockchain.SetUseGiniCoeff(p.UseGiniCoeff())
-	})
-
-	s.governance.RegisterHandler(params.UnitPrice, func(p *params.GovParamSet) {
+	s.governance.RegisterHandlers([]int{
+		params.UnitPrice,
+	}, func(key int, p *params.GovParamSet) {
 		s.txPool.SetGasPrice(big.NewInt(0).SetUint64(p.UnitPrice()))
 	})
 
-	s.governance.RegisterHandler(params.StakeUpdateInterval, func(p *params.GovParamSet) {
-		params.SetStakingUpdateInterval(p.StakeUpdateInterval())
-	})
-
-	s.governance.RegisterHandler(params.ProposerRefreshInterval, func(p *params.GovParamSet) {
-		params.SetProposerUpdateInterval(p.ProposerRefreshInterval())
-	})
-
-	s.governance.RegisterHandler(params.LowerBoundBaseFee, func(p *params.GovParamSet) {
-		s.blockchain.SetLowerBoundBaseFee(p.LowerBoundBaseFee())
-	})
-
-	s.governance.RegisterHandler(params.UpperBoundBaseFee, func(p *params.GovParamSet) {
-		s.blockchain.SetUpperBoundBaseFee(p.UpperBoundBaseFee())
-	})
-
-	s.governance.RegisterHandler(params.GasTarget, func(p *params.GovParamSet) {
-		s.blockchain.SetGasTarget(p.GasTarget())
-	})
-
-	s.governance.RegisterHandler(params.MaxBlockGasUsedForBaseFee, func(p *params.GovParamSet) {
-		s.blockchain.SetMaxBlockGasUsedForBaseFee(p.MaxBlockGasUsedForBaseFee())
-	})
-
-	s.governance.RegisterHandler(params.BaseFeeDenominator, func(p *params.GovParamSet) {
-		s.blockchain.SetBaseFeeDenominator(p.BaseFeeDenominator())
+	s.governance.RegisterHandlers([]int{
+		params.StakeUpdateInterval,
+		params.ProposerRefreshInterval,
+	}, func(key int, p *params.GovParamSet) {
+		params.ParamUpdateHandler(key, p)
 	})
 
 	return nil

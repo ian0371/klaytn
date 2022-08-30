@@ -8,7 +8,7 @@ import (
 	"github.com/klaytn/klaytn/storage/database"
 )
 
-type handler func(p *params.GovParamSet)
+type handler func(key int, p *params.GovParamSet)
 
 // Mixed engine consists of multiple governance engines
 //
@@ -140,8 +140,10 @@ func (e *MixedEngine) UpdateParams() error {
 	return nil
 }
 
-func (e *MixedEngine) RegisterHandler(key int, cb handler) {
-	e.handlers[key] = append(e.handlers[key], cb)
+func (e *MixedEngine) RegisterHandlers(keys []int, cb handler) {
+	for _, key := range keys {
+		e.handlers[key] = append(e.handlers[key], cb)
+	}
 }
 
 func (e *MixedEngine) assembleParams(headerParams *params.GovParamSet) *params.GovParamSet {
@@ -158,7 +160,7 @@ func (e *MixedEngine) handleParamUpdate(old, new *params.GovParamSet) {
 	for k, v := range old.IntMap() {
 		if v != new.MustGet(k) {
 			for _, cb := range e.handlers[k] {
-				cb(new)
+				cb(k, new)
 			}
 		}
 	}
