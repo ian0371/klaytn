@@ -31,8 +31,8 @@ type MixedEngine struct {
 	db database.DBManager
 
 	// Subordinate engines
-	// TODO: Add ContractEngine
-	headerGov *Governance
+	contractGov *ContractEngine
+	headerGov   *Governance
 
 	// for param update
 	txpool     txPool
@@ -67,6 +67,8 @@ func newMixedEngine(config *params.ChainConfig, db database.DBManager, doInit bo
 		logger.Crit("Error parsing initial ParamSet", "err", err)
 	}
 
+	e.contractGov = NewContractEngine(config)
+
 	// Setup subordinate engines
 	if doInit {
 		e.headerGov = NewGovernanceInitialize(config, db)
@@ -95,23 +97,22 @@ func (e *MixedEngine) Params() *params.GovParamSet {
 }
 
 func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
-	headerParams, err := e.headerGov.ParamsAt(num)
-	if err != nil {
-		return nil, err
-	}
+	// ignore errors
+	contractParams, _ := e.contractGov.ParamsAt(num)
+	headerParams, _ := e.headerGov.ParamsAt(num)
 
-	// TODO-Klaytn-Kore: merge contractParams
-	return e.assembleParams(headerParams), nil
+	return e.assembleParams(contractParams, headerParams), nil
 }
 
 func (e *MixedEngine) UpdateParams() error {
-	if err := e.headerGov.UpdateParams(); err != nil {
-		return err
-	}
+	// ignore errors
+	e.contractGov.UpdateParams()
+	contractParams := e.contractGov.Params()
+
+	e.headerGov.UpdateParams()
 	headerParams := e.headerGov.Params()
 
-	// TODO-Klaytn-Kore: merge contractParams
-	newParams := e.assembleParams(headerParams)
+	newParams := e.assembleParams(contractParams, headerParams)
 	e.handleParamUpdate(e.currentParams, newParams)
 
 	e.currentParams = newParams
@@ -119,12 +120,13 @@ func (e *MixedEngine) UpdateParams() error {
 	return nil
 }
 
-func (e *MixedEngine) assembleParams(headerParams *params.GovParamSet) *params.GovParamSet {
+func (e *MixedEngine) assembleParams(contractParams, headerParams *params.GovParamSet) *params.GovParamSet {
 	// Refer to the comments above `type MixedEngine` for assembly order
 	p := params.NewGovParamSet()
 	p = params.NewGovParamSetMerged(p, e.defaultParams)
 	p = params.NewGovParamSetMerged(p, e.initialParams)
 	p = params.NewGovParamSetMerged(p, headerParams)
+	p = params.NewGovParamSetMerged(p, contractParams)
 	return p
 }
 

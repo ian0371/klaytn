@@ -11,6 +11,8 @@ import (
 	"github.com/klaytn/klaytn/blockchain/vm"
 	"github.com/klaytn/klaytn/common"
 	govcontract "github.com/klaytn/klaytn/contracts/gov"
+	regcontract "github.com/klaytn/klaytn/contracts/registry"
+	"github.com/klaytn/klaytn/contracts/reward/contract"
 	"github.com/klaytn/klaytn/params"
 )
 
@@ -20,7 +22,65 @@ type contractCaller struct {
 	contractAddr common.Address
 }
 
-var govParamAbi, _ = abi.JSON(strings.NewReader(govcontract.GovParamABI))
+var (
+	govParamAbi, _ = abi.JSON(strings.NewReader(govcontract.GovParamABI))
+	abookAbi, _    = abi.JSON(strings.NewReader(contract.AddressBookABI))
+	regAbi, _      = abi.JSON(strings.NewReader(regcontract.RegistryABI))
+)
+
+func (c *contractCaller) getAddressAt(num *big.Int, name [32]byte) (common.Address, error) {
+	tx, err := c.makeTx(num, regAbi, "getAddress", name)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	res, err := c.callTx(num, tx)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	// Cannot parse empty data
+	if len(res) == 0 {
+		return common.Address{}, nil
+	}
+
+	// c.f. contracts/registry/Registry.go:GetAddress()
+	pAddr := new(common.Address)
+	if err := regAbi.Unpack(&pAddr, "getAddress", res); err != nil {
+		return common.Address{}, err
+	}
+	// Retrieve the slices allocated inside Unpack().
+	addr := *pAddr
+
+	return addr, nil
+}
+
+func (c *contractCaller) getRegistryAt(num *big.Int) (common.Address, error) {
+	tx, err := c.makeTx(num, abookAbi, "spareContractAddress")
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	res, err := c.callTx(num, tx)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	// Cannot parse empty data
+	if len(res) == 0 {
+		return common.Address{}, nil
+	}
+
+	// c.f. contracts/reward/contract/AddressBook.go:SpareContractAddress()
+	pAddr := new(common.Address)
+	if err := abookAbi.Unpack(&pAddr, "spareContractAddress", res); err != nil {
+		return common.Address{}, err
+	}
+	// Retrieve the slices allocated inside Unpack().
+	addr := *pAddr
+
+	return addr, nil
+}
 
 func (c *contractCaller) getAllParams(num *big.Int) (*params.GovParamSet, error) {
 	tx, err := c.makeTx(num, govParamAbi, "getAllParams")

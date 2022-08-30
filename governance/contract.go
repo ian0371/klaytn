@@ -5,13 +5,16 @@ import (
 	"math/big"
 
 	"github.com/klaytn/klaytn/common"
+	"github.com/klaytn/klaytn/contracts/reward/contract"
 	"github.com/klaytn/klaytn/params"
 )
+
+var GOVPARAM_NAME = [32]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x6f, 0x76, 0x50, 0x61, 0x72, 0x61, 0x6d}
 
 var errContractEngineNotReady = errors.New("ContractEngine is not ready")
 
 type ContractEngine struct {
-	chainConfig   *params.ChainConfig
+	config        *params.ChainConfig
 	currentParams *params.GovParamSet
 
 	chain blockChain // To access the contract state DB
@@ -19,7 +22,7 @@ type ContractEngine struct {
 
 func NewContractEngine(config *params.ChainConfig) *ContractEngine {
 	e := &ContractEngine{
-		chainConfig:   config,
+		config:        config,
 		currentParams: params.NewGovParamSet(),
 	}
 
@@ -39,7 +42,7 @@ func (e *ContractEngine) Params() *params.GovParamSet {
 func (e *ContractEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 	if e.chain == nil {
 		logger.Error("Invoked ParamsAt() before SetBlockchain", "num", num)
-		return nil, errContractEngineNotReady
+		return params.NewGovParamSet(), errContractEngineNotReady
 	}
 
 	head := e.chain.CurrentHeader().Number.Uint64()
@@ -53,7 +56,7 @@ func (e *ContractEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 
 	pset, err := e.contractGetAllParams(num)
 	if err != nil {
-		return nil, err
+		return params.NewGovParamSet(), err
 	}
 	return pset, nil
 }
@@ -88,7 +91,7 @@ func (e *ContractEngine) contractGetAllParams(num uint64) (*params.GovParamSet, 
 	}
 
 	caller := &contractCaller{
-		chainConfig:  e.chainConfig,
+		chainConfig:  e.config,
 		chain:        e.chain,
 		contractAddr: addr,
 	}
@@ -100,12 +103,33 @@ func (e *ContractEngine) contractGetAllParams(num uint64) (*params.GovParamSet, 
 
 // Return the GovernanceContract address effective at given block number
 func (e *ContractEngine) contractAddrAt(num uint64) common.Address {
-	// TODO: Load from HeaderEngine
-
-	// If database don't have the item, fallback to ChainConfig
-	if e.chainConfig.Governance != nil {
-		return e.chainConfig.Governance.GovernanceContract
+	if !e.config.IsContractGovForkEnabled(new(big.Int).SetUint64(num)) {
+		return common.Address{}
 	}
 
-	return common.Address{}
+	caller := &contractCaller{
+		chainConfig:  e.config,
+		chain:        e.chain,
+		contractAddr: common.HexToAddress(contract.AddressBookContractAddress),
+	}
+	if num > 0 {
+		num -= 1
+	}
+
+	regAddr, err := caller.getRegistryAt(new(big.Int).SetUint64(num))
+	if err != nil {
+		return common.Address{}
+	}
+
+	caller = &contractCaller{
+		chainConfig:  e.config,
+		chain:        e.chain,
+		contractAddr: regAddr,
+	}
+
+	gpAddr, err := caller.getAddressAt(new(big.Int).SetUint64(num), GOVPARAM_NAME)
+	if err != nil {
+		return common.Address{}
+	}
+	return gpAddr
 }
