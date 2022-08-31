@@ -217,6 +217,7 @@ var govParamTypes = map[int]*govParamType{
 	GasTarget:                 govParamTypeUint64,
 	MaxBlockGasUsedForBaseFee: govParamTypeUint64,
 	BaseFeeDenominator:        govParamTypeUint64,
+	GovernanceContract:        govParamTypeAddress,
 }
 
 var govParamNames = map[string]int{
@@ -238,6 +239,7 @@ var govParamNames = map[string]int{
 	"kip71.gastarget":                 GasTarget,
 	"kip71.maxblockgasusedforbasefee": MaxBlockGasUsedForBaseFee,
 	"kip71.basefeedenominator":        BaseFeeDenominator,
+	"governance.governancecontract":   GovernanceContract,
 }
 
 var govParamNamesReverse = map[int]string{}
@@ -332,6 +334,7 @@ func NewGovParamSetChainConfig(config *ChainConfig) (*GovParamSet, error) {
 	if config.Governance != nil {
 		items[GoverningNode] = config.Governance.GoverningNode
 		items[GovernanceMode] = config.Governance.GovernanceMode
+		items[GovernanceContract] = config.Governance.GovernanceContract
 		if config.Governance.Reward != nil {
 			if config.Governance.Reward.MintingAmount != nil {
 				items[MintingAmount] = config.Governance.Reward.MintingAmount.String()
@@ -510,4 +513,8 @@ func (p *GovParamSet) MaxBlockGasUsedForBaseFee() uint64 {
 
 func (p *GovParamSet) BaseFeeDenominator() uint64 {
 	return p.MustGet(BaseFeeDenominator).(uint64)
+}
+
+func (p *GovParamSet) GovernanceContract() common.Address {
+	return p.MustGet(GovernanceContract).(common.Address)
 }

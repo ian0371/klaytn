@@ -175,6 +175,7 @@ func TestGovParamSet_Nominal(t *testing.T) {
 	assert.Equal(t, c.Governance.KIP71.GasTarget, p.GasTarget())
 	assert.Equal(t, c.Governance.KIP71.MaxBlockGasUsedForBaseFee, p.MaxBlockGasUsedForBaseFee())
 	assert.Equal(t, c.Governance.KIP71.BaseFeeDenominator, p.BaseFeeDenominator())
+	assert.Equal(t, c.Governance.GovernanceContract, p.GovernanceContract())
 }
 
 func TestGovParamSet_New(t *testing.T) {
