@@ -111,6 +111,7 @@ Args :
 		governanceFlag,
 		govModeFlag,
 		governingNodeFlag,
+		govContractFlag,
 		rewardMintAmountFlag,
 		rewardRatioFlag,
 		rewardGiniCoeffFlag,
@@ -228,7 +229,11 @@ func genGovernanceConfig(ctx *cli.Context) *params.GovernanceConfig {
 	govMode := ctx.String(govModeFlag.Name)
 	governingNode := ctx.String(governingNodeFlag.Name)
 	if !common.IsHexAddress(governingNode) {
-		log.Fatalf("Governing Node is invalid hex address", "value", governingNode)
+		log.Fatalf("Governing Node is not a valid hex address", "value", governingNode)
+	}
+	govContract := ctx.String(govContractFlag.Name)
+	if !common.IsHexAddress(govContract) {
+		log.Fatalf("Governance Contract is not a valid hex address", "value", govContract)
 	}
 	return &params.GovernanceConfig{
 		GoverningNode:  common.HexToAddress(governingNode),
