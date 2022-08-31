@@ -385,4 +385,10 @@ var (
 		Usage: "magmaCompatible blockNumber",
 		Value: 0,
 	}
+
+	contractGovCompatibleBlockNumberFlag = cli.Int64Flag{
+		Name:  "contract-gov-compatible-blocknumber",
+		Usage: "contractGovCompatible blockNumber",
+		Value: 0,
+	}
 )

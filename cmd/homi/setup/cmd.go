@@ -128,6 +128,7 @@ Args :
 		londonCompatibleBlockNumberFlag,
 		ethTxTypeCompatibleBlockNumberFlag,
 		magmaCompatibleBlockNumberFlag,
+		contractGovCompatibleBlockNumberFlag,
 	},
 	ArgsUsage: "type",
 }
@@ -533,6 +534,7 @@ func gen(ctx *cli.Context) error {
 	genesisJson.Config.LondonCompatibleBlock = big.NewInt(ctx.Int64(londonCompatibleBlockNumberFlag.Name))
 	genesisJson.Config.EthTxTypeCompatibleBlock = big.NewInt(ctx.Int64(ethTxTypeCompatibleBlockNumberFlag.Name))
 	genesisJson.Config.MagmaCompatibleBlock = big.NewInt(ctx.Int64(magmaCompatibleBlockNumberFlag.Name))
+	genesisJson.Config.ContractGovCompatibleBlock = big.NewInt(ctx.Int64(contractGovCompatibleBlockNumberFlag.Name))
 
 	genesisJsonBytes, _ = json.MarshalIndent(genesisJson, "", "    ")
 	genValidatorKeystore(privKeys)
