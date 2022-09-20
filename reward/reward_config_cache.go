@@ -36,6 +36,12 @@ const (
 	maxRewardConfigCache = 3
 )
 
+type KIPxxRewardConfig struct {
+	basicRatio *big.Int
+	stakeRatio *big.Int
+	totalRatio *big.Int
+}
+
 type rewardConfig struct {
 	blockNum      uint64
 	mintingAmount *big.Int
@@ -44,6 +50,7 @@ type rewardConfig struct {
 	kirRatio      *big.Int
 	totalRatio    *big.Int
 	unitPrice     *big.Int
+	kipxx         *KIPxxRewardConfig
 }
 
 // Cache for parsed reward parameters from governance
