@@ -121,3 +121,81 @@ func TestRewardDistributor_distributeNewBlockReward(t *testing.T) {
 		assert.Equal(t, testCase.expectedPocBalance.Uint64(), BalanceAdder.GetBalance(testCase.stakingInfo.PoCAddr).Uint64())
 	}
 }
+
+func Benchmark_distributeNewBlockReward(b *testing.B) {
+	// in the worst case, distribute stake shares among N
+	amounts := make(map[int]uint64)
+	N := 50
+	for i := 0; i < N; i++ {
+		amounts[i] = minStaking * 2
+	}
+	stakingInfo := genStakingInfo(N, nil, amounts)
+
+	rewardConfig := &rewardConfig{
+		blockNum:      1,
+		mintingAmount: big.NewInt(0).SetUint64(10000),
+		cnRatio:       big.NewInt(0).SetInt64(34),
+		pocRatio:      big.NewInt(0).SetInt64(54),
+		kirRatio:      big.NewInt(0).SetInt64(12),
+		totalRatio:    big.NewInt(0).SetInt64(100),
+		unitPrice:     big.NewInt(0).SetInt64(25e9),
+		kipxx: &KIPxxRewardConfig{
+			basicRatio: big.NewInt(0).SetInt64(20),
+			stakeRatio: big.NewInt(0).SetInt64(80),
+			totalRatio: big.NewInt(0).SetInt64(100),
+		},
+	}
+
+	header := &types.Header{}
+	header.BaseFee = big.NewInt(30000000000)
+	header.Number = big.NewInt(0)
+	header.Rewardbase = common.HexToAddress(fmt.Sprintf("0x%040d", rewardBaseAddr))
+	totalTxFee := big.NewInt(30000000000)
+
+	governance := newDefaultTestGovernance()
+
+	BalanceAdder := newTestBalanceAdder()
+	rewardDistributor := NewRewardDistributor(governance)
+
+	b.ResetTimer()
+	rewardDistributor.distributeNewBlockReward(BalanceAdder, header, totalTxFee, rewardConfig, stakingInfo)
+}
+
+func Benchmark_distributeBlockReward(b *testing.B) {
+	// in the worst case, distribute stake shares among N
+	amounts := make(map[int]uint64)
+	N := 50
+	for i := 0; i < N; i++ {
+		amounts[i] = minStaking * 2
+	}
+	stakingInfo := genStakingInfo(N, nil, amounts)
+
+	rewardConfig := &rewardConfig{
+		blockNum:      1,
+		mintingAmount: big.NewInt(0).SetUint64(10000),
+		cnRatio:       big.NewInt(0).SetInt64(34),
+		pocRatio:      big.NewInt(0).SetInt64(54),
+		kirRatio:      big.NewInt(0).SetInt64(12),
+		totalRatio:    big.NewInt(0).SetInt64(100),
+		unitPrice:     big.NewInt(0).SetInt64(25e9),
+		kipxx: &KIPxxRewardConfig{
+			basicRatio: big.NewInt(0).SetInt64(20),
+			stakeRatio: big.NewInt(0).SetInt64(80),
+			totalRatio: big.NewInt(0).SetInt64(100),
+		},
+	}
+
+	header := &types.Header{}
+	header.BaseFee = big.NewInt(30000000000)
+	header.Number = big.NewInt(0)
+	header.Rewardbase = common.HexToAddress(fmt.Sprintf("0x%040d", rewardBaseAddr))
+	totalTxFee := big.NewInt(30000000000)
+
+	governance := newDefaultTestGovernance()
+
+	BalanceAdder := newTestBalanceAdder()
+	rewardDistributor := NewRewardDistributor(governance)
+
+	b.ResetTimer()
+	rewardDistributor.distributeBlockReward(BalanceAdder, header, totalTxFee, rewardConfig, stakingInfo.PoCAddr, stakingInfo.KIRAddr)
+}
