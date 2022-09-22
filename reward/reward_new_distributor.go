@@ -61,11 +61,11 @@ func (rd *RewardDistributor) splitReward(config *rewardConfig, totalTxFee *big.I
 	kir = big.NewInt(0).Div(tmpInt, config.totalRatio)
 
 	// 2 - split cn
-	tmpInt.Mul(cn, config.kipxx.basicRatio)
-	basic = big.NewInt(0).Div(tmpInt, config.kipxx.totalRatio)
+	tmpInt.Mul(cn, config.kip82.basicRatio)
+	basic = big.NewInt(0).Div(tmpInt, config.kip82.totalRatio)
 
-	tmpInt.Mul(cn, config.kipxx.stakeRatio)
-	stake = big.NewInt(0).Div(tmpInt, config.kipxx.totalRatio)
+	tmpInt.Mul(cn, config.kip82.stakeRatio)
+	stake = big.NewInt(0).Div(tmpInt, config.kip82.totalRatio)
 
 	// remaining = minted - basic - stake - kgf - kir
 	remaining = tmpInt.Sub(minted, basic)

@@ -66,7 +66,7 @@ func TestRewardDistributor_distributeNewBlockReward(t *testing.T) {
 		kirRatio:      big.NewInt(0).SetInt64(12),
 		totalRatio:    big.NewInt(0).SetInt64(100),
 		unitPrice:     big.NewInt(0).SetInt64(25e9),
-		kipxx: &KIPxxRewardConfig{
+		kip82: &KIP82RewardConfig{
 			basicRatio: big.NewInt(0).SetInt64(20),
 			stakeRatio: big.NewInt(0).SetInt64(80),
 			totalRatio: big.NewInt(0).SetInt64(100),
@@ -142,7 +142,7 @@ func Benchmark_distributeNewBlockReward(b *testing.B) {
 		kirRatio:      big.NewInt(0).SetInt64(12),
 		totalRatio:    big.NewInt(0).SetInt64(100),
 		unitPrice:     big.NewInt(0).SetInt64(25e9),
-		kipxx: &KIPxxRewardConfig{
+		kip82: &KIP82RewardConfig{
 			basicRatio: big.NewInt(0).SetInt64(20),
 			stakeRatio: big.NewInt(0).SetInt64(80),
 			totalRatio: big.NewInt(0).SetInt64(100),
@@ -184,7 +184,7 @@ func Benchmark_distributeBlockReward(b *testing.B) {
 		kirRatio:      big.NewInt(0).SetInt64(12),
 		totalRatio:    big.NewInt(0).SetInt64(100),
 		unitPrice:     big.NewInt(0).SetInt64(25e9),
-		kipxx: &KIPxxRewardConfig{
+		kip82: &KIP82RewardConfig{
 			basicRatio: big.NewInt(0).SetInt64(20),
 			stakeRatio: big.NewInt(0).SetInt64(80),
 			totalRatio: big.NewInt(0).SetInt64(100),
