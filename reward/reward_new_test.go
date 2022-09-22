@@ -5,9 +5,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/klaytn/klaytn/blockchain/state"
 	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/common"
 	"github.com/klaytn/klaytn/log"
+	"github.com/klaytn/klaytn/storage/database"
+	"github.com/stretchr/testify/require"
 	"gotest.tools/assert"
 )
 
@@ -112,13 +115,13 @@ func TestRewardDistributor_distributeNewBlockReward(t *testing.T) {
 	governance := newDefaultTestGovernance()
 
 	for _, testCase := range testCases {
-		BalanceAdder := newTestBalanceAdder()
+		balAdder := newTestBalanceAdder()
 		rewardDistributor := NewRewardDistributor(governance)
-		rewardDistributor.distributeNewBlockReward(BalanceAdder, header, testCase.totalTxFee, rewardConfig, testCase.stakingInfo)
+		rewardDistributor.distributeNewBlockReward(balAdder, header, testCase.totalTxFee, rewardConfig, testCase.stakingInfo)
 
-		assert.Equal(t, testCase.expectedBasicBalance.Uint64(), BalanceAdder.GetBalance(header.Rewardbase).Uint64())
-		assert.Equal(t, testCase.expectedKirBalance.Uint64(), BalanceAdder.GetBalance(testCase.stakingInfo.KIRAddr).Uint64())
-		assert.Equal(t, testCase.expectedPocBalance.Uint64(), BalanceAdder.GetBalance(testCase.stakingInfo.PoCAddr).Uint64())
+		assert.Equal(t, testCase.expectedBasicBalance.Uint64(), balAdder.GetBalance(header.Rewardbase).Uint64())
+		assert.Equal(t, testCase.expectedKirBalance.Uint64(), balAdder.GetBalance(testCase.stakingInfo.KIRAddr).Uint64())
+		assert.Equal(t, testCase.expectedPocBalance.Uint64(), balAdder.GetBalance(testCase.stakingInfo.PoCAddr).Uint64())
 	}
 }
 
@@ -154,11 +157,14 @@ func Benchmark_distributeNewBlockReward(b *testing.B) {
 
 	governance := newDefaultTestGovernance()
 
-	BalanceAdder := newTestBalanceAdder()
+	dbm := database.NewDBManager(&database.DBConfig{DBType: database.MemoryDB})
+	balAdder, err := state.New(common.Hash{}, state.NewDatabase(dbm), nil)
+	require.Nil(b, err)
+
 	rewardDistributor := NewRewardDistributor(governance)
 
 	b.ResetTimer()
-	rewardDistributor.distributeNewBlockReward(BalanceAdder, header, totalTxFee, rewardConfig, stakingInfo)
+	rewardDistributor.distributeNewBlockReward(balAdder, header, totalTxFee, rewardConfig, stakingInfo)
 }
 
 func Benchmark_distributeBlockReward(b *testing.B) {
@@ -193,9 +199,12 @@ func Benchmark_distributeBlockReward(b *testing.B) {
 
 	governance := newDefaultTestGovernance()
 
-	BalanceAdder := newTestBalanceAdder()
+	dbm := database.NewDBManager(&database.DBConfig{DBType: database.MemoryDB})
+	balAdder, err := state.New(common.Hash{}, state.NewDatabase(dbm), nil)
+	require.Nil(b, err)
+
 	rewardDistributor := NewRewardDistributor(governance)
 
 	b.ResetTimer()
-	rewardDistributor.distributeBlockReward(BalanceAdder, header, totalTxFee, rewardConfig, stakingInfo.PoCAddr, stakingInfo.KIRAddr)
+	rewardDistributor.distributeBlockReward(balAdder, header, totalTxFee, rewardConfig, stakingInfo.PoCAddr, stakingInfo.KIRAddr)
 }
