@@ -57,6 +57,7 @@ var (
 				StakingUpdateInterval:  86400,
 				ProposerUpdateInterval: 3600,
 				MinimumStake:           big.NewInt(5000000),
+				NewRatio:               "20/80",
 			},
 		},
 		Istanbul: &IstanbulConfig{
@@ -86,6 +87,7 @@ var (
 				StakingUpdateInterval:  86400,
 				ProposerUpdateInterval: 3600,
 				MinimumStake:           big.NewInt(5000000),
+				NewRatio:               "20/80",
 			},
 		},
 		Istanbul: &IstanbulConfig{
@@ -204,6 +206,7 @@ type RewardConfig struct {
 	StakingUpdateInterval  uint64   `json:"stakingUpdateInterval"`  // Interval when staking information is updated
 	ProposerUpdateInterval uint64   `json:"proposerUpdateInterval"` // Interval when proposer information is updated
 	MinimumStake           *big.Int `json:"minimumStake"`           // Minimum amount of peb to join CCO
+	NewRatio               string   `json:"newRatio"`               // Define how much portion of reward be distributed to CN/PoC/KIR
 }
 
 // Magma governance parameters
