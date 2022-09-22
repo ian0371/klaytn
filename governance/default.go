@@ -70,6 +70,7 @@ var (
 		"governance.removevalidator":      params.RemoveValidator,
 		"param.txgashumanreadable":        params.ConstTxGasHumanReadable,
 		"istanbul.timeout":                params.Timeout,
+		"reward.newratio":                 params.NewRatio,
 	}
 
 	GovernanceForbiddenKeyMap = map[string]int{
@@ -93,6 +94,7 @@ var (
 		params.BaseFeeDenominator:        "kip71.basefeedenominator",
 		params.MintingAmount:             "reward.mintingamount",
 		params.Ratio:                     "reward.ratio",
+		params.NewRatio:                  "reward.newratio",
 		params.UseGiniCoeff:              "reward.useginicoeff",
 		params.DeferredTxFee:             "reward.deferredtxfee",
 		params.MinimumStake:              "reward.minimumstake",
@@ -561,7 +563,7 @@ func (g *Governance) ParseVoteValue(gVote *GovernanceVote) (*GovernanceVote, err
 	}
 
 	switch k {
-	case params.GovernanceMode, params.MintingAmount, params.MinimumStake, params.Ratio:
+	case params.GovernanceMode, params.MintingAmount, params.MinimumStake, params.Ratio, params.NewRatio:
 		v, ok := gVote.Value.([]uint8)
 		if !ok {
 			return nil, ErrValueTypeMismatch
@@ -629,7 +631,7 @@ func (gov *Governance) updateChangeSet(vote GovernanceVote) bool {
 	case params.GoverningNode:
 		gov.changeSet.SetValue(GovernanceKeyMap[vote.Key], vote.Value.(common.Address))
 		return true
-	case params.GovernanceMode, params.Ratio:
+	case params.GovernanceMode, params.Ratio, params.NewRatio:
 		gov.changeSet.SetValue(GovernanceKeyMap[vote.Key], vote.Value.(string))
 		return true
 	case params.Epoch, params.StakeUpdateInterval, params.ProposerRefreshInterval, params.CommitteeSize,
@@ -660,6 +662,7 @@ func CheckGenesisValues(c *params.ChainConfig) error {
 		"governance.governingnode":      c.Governance.GoverningNode,
 		"governance.unitprice":          c.UnitPrice,
 		"reward.ratio":                  c.Governance.Reward.Ratio,
+		"reward.newratio":               c.Governance.Reward.NewRatio,
 		"reward.useginicoeff":           c.Governance.Reward.UseGiniCoeff,
 		"reward.deferredtxfee":          c.Governance.Reward.DeferredTxFee,
 		"reward.mintingamount":          c.Governance.Reward.MintingAmount.String(),
@@ -1077,6 +1080,7 @@ func GetGovernanceItemsFromChainConfig(config *params.ChainConfig) GovernanceSet
 			params.UnitPrice:               config.UnitPrice,
 			params.MintingAmount:           governance.Reward.MintingAmount.String(),
 			params.Ratio:                   governance.Reward.Ratio,
+			params.NewRatio:                governance.Reward.NewRatio,
 			params.UseGiniCoeff:            governance.Reward.UseGiniCoeff,
 			params.DeferredTxFee:           governance.Reward.DeferredTxFee,
 			params.MinimumStake:            governance.Reward.MinimumStake.String(),
@@ -1167,6 +1171,10 @@ func (gov *Governance) ProposerUpdateInterval() uint64 {
 
 func (gov *Governance) Ratio() string {
 	return gov.GetGovernanceValue(params.Ratio).(string)
+}
+
+func (gov *Governance) NewRatio() string {
+	return gov.GetGovernanceValue(params.NewRatio).(string)
 }
 
 func (gov *Governance) StakingUpdateInterval() uint64 {

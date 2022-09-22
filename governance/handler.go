@@ -58,6 +58,7 @@ var GovernanceItems = map[int]check{
 	params.RemoveValidator:           {addressT, checkAddressOrListOfUniqueAddresses, nil},
 	params.MintingAmount:             {stringT, checkBigInt, nil},
 	params.Ratio:                     {stringT, checkRatio, nil},
+	params.NewRatio:                  {stringT, checkNewRatio, nil},
 	params.UseGiniCoeff:              {boolT, checkUint64andBool, updateUseGiniCoeff},
 	params.DeferredTxFee:             {boolT, checkUint64andBool, nil},
 	params.MinimumStake:              {stringT, checkRewardMinimumStake, nil},
@@ -250,6 +251,26 @@ func (gov *Governance) ValidateVote(vote *GovernanceVote) (*GovernanceVote, bool
 func checkRatio(k string, v interface{}) bool {
 	x := strings.Split(v.(string), "/")
 	if len(x) != params.RewardSliceCount {
+		return false
+	}
+	var sum uint64
+	for _, item := range x {
+		v, err := strconv.ParseUint(item, 10, 64)
+		if err != nil {
+			return false
+		}
+		sum += v
+	}
+	if sum == 100 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func checkNewRatio(k string, v interface{}) bool {
+	x := strings.Split(v.(string), "/")
+	if len(x) != params.NewRewardSliceCount {
 		return false
 	}
 	var sum uint64

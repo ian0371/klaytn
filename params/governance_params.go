@@ -61,6 +61,7 @@ const (
 	GasTarget
 	MaxBlockGasUsedForBaseFee
 	BaseFeeDenominator
+	NewRatio
 )
 
 const (
@@ -99,6 +100,7 @@ var (
 	DefaultStakeUpdateInterval       = uint64(86400) // 1 day
 	DefaultProposerRefreshInterval   = uint64(3600)  // 1 hour
 	DefaultPeriod                    = uint64(1)
+	DefaultNewRatio                  = "20/80"
 )
 
 func IsStakingUpdateInterval(blockNum uint64) bool {
