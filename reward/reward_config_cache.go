@@ -126,6 +126,30 @@ func (rewardConfigCache *rewardConfigCache) newRewardConfig(blockNumber uint64) 
 	kirRatio.SetInt64(int64(kir))
 	totalRatio.SetInt64(int64(cn + poc + kir))
 
+	result, err = rewardConfigCache.governanceHelper.GetItemAtNumberByIntKey(blockNumber, params.NewRatio)
+	if err != nil {
+		logger.Error("Couldn't get Ratio from governance", "blockNumber", blockNumber, "err", err)
+		return nil, errFailGettingConfigure
+	}
+
+	basicRatio := big.NewInt(0)
+	stakeRatio := big.NewInt(0)
+	newTotalRatio := big.NewInt(0)
+
+	basic, stake, parsingError := rewardConfigCache.parseRewardNewRatio(result.(string))
+	if parsingError != nil {
+		return nil, parsingError
+	}
+	basicRatio.SetInt64(int64(basic))
+	stakeRatio.SetInt64(int64(stake))
+	newTotalRatio.SetInt64(int64(basic + stake))
+
+	kip82Config := &KIP82RewardConfig{
+		basicRatio: basicRatio,
+		stakeRatio: stakeRatio,
+		totalRatio: newTotalRatio,
+	}
+
 	unitPrice := big.NewInt(0)
 	result, err = rewardConfigCache.governanceHelper.GetItemAtNumberByIntKey(blockNumber, params.UnitPrice)
 	if err != nil {
@@ -142,6 +166,7 @@ func (rewardConfigCache *rewardConfigCache) newRewardConfig(blockNumber uint64) 
 		kirRatio:      kirRatio,
 		totalRatio:    totalRatio,
 		unitPrice:     unitPrice,
+		kip82:         kip82Config,
 	}
 	return rewardConfig, nil
 }
@@ -163,4 +188,18 @@ func (rewardConfigCache *rewardConfigCache) parseRewardRatio(ratio string) (int,
 		return 0, 0, 0, errParsingRatio
 	}
 	return cn, poc, kir, nil
+}
+
+func (rewardConfigCache *rewardConfigCache) parseRewardNewRatio(ratio string) (int, int, error) {
+	s := strings.Split(ratio, "/")
+	if len(s) != 2 {
+		return 0, 0, errInvalidFormat
+	}
+	basic, err1 := strconv.Atoi(s[0])
+	stake, err2 := strconv.Atoi(s[1])
+
+	if err1 != nil || err2 != nil {
+		return 0, 0, errParsingRatio
+	}
+	return basic, stake, nil
 }

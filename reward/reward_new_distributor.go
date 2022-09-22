@@ -18,10 +18,38 @@ package reward
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/common"
 )
+
+var OldTimer, NewTimer time.Duration
+
+// DistributeNewBlockReward distributes block reward to proposer, kirAddr and pocAddr.
+func (rd *RewardDistributor) DistributeNewBlockReward(b BalanceAdder, header *types.Header, stakingInfo *StakingInfo) error {
+	defer func(start time.Time) {
+		NewTimer = time.Since(start)
+	}(time.Now())
+
+	rewardConfig, err := rd.rcc.get(header.Number.Uint64())
+	if err != nil {
+		return err
+	}
+
+	// Calculate total tx fee
+	totalTxFee := common.Big0
+	if rd.gh.DeferredTxFee() {
+		totalTxFee = rd.getTotalTxFee(header, rewardConfig)
+		// magma hardfork
+		if header.BaseFee != nil {
+			totalTxFee = rd.txFeeBurning(totalTxFee)
+		}
+	}
+
+	rd.distributeNewBlockReward(b, header, totalTxFee, rewardConfig, stakingInfo)
+	return nil
+}
 
 func (rd *RewardDistributor) distributeNewBlockReward(b BalanceAdder, header *types.Header, totalTxFee *big.Int, rewardConfig *rewardConfig, stakingInfo *StakingInfo) {
 	proposer := header.Rewardbase

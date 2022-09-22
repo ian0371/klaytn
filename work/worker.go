@@ -36,6 +36,7 @@ import (
 	"github.com/klaytn/klaytn/event"
 	klaytnmetrics "github.com/klaytn/klaytn/metrics"
 	"github.com/klaytn/klaytn/params"
+	"github.com/klaytn/klaytn/reward"
 	"github.com/klaytn/klaytn/storage/database"
 	"github.com/rcrowley/go-metrics"
 )
@@ -88,6 +89,8 @@ var (
 	snapshotAccountReadTimer = metrics.NewRegisteredTimer("miner/snapshot/account/reads", nil)
 	snapshotStorageReadTimer = metrics.NewRegisteredTimer("miner/snapshot/storage/reads", nil)
 	snapshotCommitTimer      = metrics.NewRegisteredTimer("miner/snapshot/commits", nil)
+	oldRewardTimer           = metrics.NewRegisteredTimer("reward/old", nil)
+	newRewardTimer           = metrics.NewRegisteredTimer("reward/new", nil)
 )
 
 // Agent can register themself with the worker
@@ -578,6 +581,11 @@ func (self *worker) commitNewWork() {
 			snapshotAccountReadTimer.Update(work.state.SnapshotAccountReads)
 			snapshotStorageReadTimer.Update(work.state.SnapshotStorageReads)
 			snapshotCommitTimer.Update(work.state.SnapshotCommits)
+
+			oldRewardTimer.Update(reward.OldTimer)
+			newRewardTimer.Update(reward.NewTimer)
+			reward.OldTimer = 0
+			reward.NewTimer = 0
 
 			trieAccess := work.state.AccountReads + work.state.AccountHashes + work.state.AccountUpdates + work.state.AccountCommits
 			trieAccess += work.state.StorageReads + work.state.StorageHashes + work.state.StorageUpdates + work.state.StorageCommits

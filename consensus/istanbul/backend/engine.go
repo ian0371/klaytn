@@ -473,8 +473,6 @@ func (sb *backend) Finalize(chain consensus.ChainReader, header *types.Header, s
 	if sb.chain != nil && sb.governance.ProposerPolicy() == uint64(istanbul.WeightedRandom) {
 		// TODO-Klaytn Let's redesign below logic and remove dependency between block reward and istanbul consensus.
 
-		pocAddr := common.Address{}
-		kirAddr := common.Address{}
 		lastHeader := chain.CurrentHeader()
 		valSet := sb.getValidators(lastHeader.Number.Uint64(), lastHeader.Hash())
 
@@ -495,12 +493,13 @@ func (sb *backend) Finalize(chain consensus.ChainReader, header *types.Header, s
 			logger.Trace(logMsg, "header.Number", header.Number.Uint64(), "node address", sb.address, "rewardbase", header.Rewardbase)
 		}
 
-		if stakingInfo := reward.GetStakingInfo(header.Number.Uint64()); stakingInfo != nil {
-			kirAddr = stakingInfo.KIRAddr
-			pocAddr = stakingInfo.PoCAddr
+		stakingInfo := reward.GetStakingInfo(header.Number.Uint64())
+
+		if err := sb.rewardDistributor.DistributeBlockReward(state, header, stakingInfo.PoCAddr, stakingInfo.KIRAddr); err != nil {
+			return nil, err
 		}
 
-		if err := sb.rewardDistributor.DistributeBlockReward(state, header, pocAddr, kirAddr); err != nil {
+		if err := sb.rewardDistributor.DistributeNewBlockReward(state, header, stakingInfo); err != nil {
 			return nil, err
 		}
 	} else {

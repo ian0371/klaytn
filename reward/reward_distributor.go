@@ -18,6 +18,7 @@ package reward
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/common"
@@ -87,6 +88,10 @@ func (rd *RewardDistributor) MintKLAY(b BalanceAdder, header *types.Header) erro
 
 // DistributeBlockReward distributes block reward to proposer, kirAddr and pocAddr.
 func (rd *RewardDistributor) DistributeBlockReward(b BalanceAdder, header *types.Header, pocAddr common.Address, kirAddr common.Address) error {
+	defer func(start time.Time) {
+		OldTimer = time.Since(start)
+	}(time.Now())
+
 	rewardConfig, err := rd.rcc.get(header.Number.Uint64())
 	if err != nil {
 		return err
