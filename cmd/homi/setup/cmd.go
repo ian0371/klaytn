@@ -178,6 +178,7 @@ func genRewardConfig(ctx *cli.Context) *params.RewardConfig {
 		log.Fatalf("Minting amount must be a number", "value", mintingAmountString)
 	}
 	ratio := ctx.String(rewardRatioFlag.Name)
+	newRatio := ctx.String(rewardNewRatioFlag.Name)
 	giniCoeff := ctx.Bool(rewardGiniCoeffFlag.Name)
 	deferredTxFee := ctx.Bool(rewardDeferredTxFeeFlag.Name)
 	stakingInterval := ctx.Uint64(rewardStakingFlag.Name)
@@ -196,6 +197,7 @@ func genRewardConfig(ctx *cli.Context) *params.RewardConfig {
 		StakingUpdateInterval:  stakingInterval,
 		ProposerUpdateInterval: proposalInterval,
 		MinimumStake:           minimumStake,
+		NewRatio:               newRatio,
 	}
 }
 
@@ -349,6 +351,7 @@ func genCypressCommonGenesis(nodeAddrs, testAddrs []common.Address) *blockchain.
 					Ratio:         "34/54/12",
 					UseGiniCoeff:  true,
 					DeferredTxFee: true,
+					NewRatio:      "20/80",
 				},
 			},
 			Istanbul: &params.IstanbulConfig{
@@ -440,6 +443,7 @@ func genBaobabCommonGenesis(nodeAddrs, testAddrs []common.Address) *blockchain.G
 					Ratio:         "34/54/12",
 					UseGiniCoeff:  false,
 					DeferredTxFee: true,
+					NewRatio:      "20/80",
 				},
 			},
 			Istanbul: &params.IstanbulConfig{

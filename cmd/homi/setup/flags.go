@@ -277,6 +277,12 @@ var (
 		Value: params.DefaultRatio,
 	}
 
+	rewardNewRatioFlag = cli.StringFlag{
+		Name:  "new-reward-ratio",
+		Usage: "governance new ratio [default: 20/80]",
+		Value: params.DefaultNewRatio,
+	}
+
 	rewardGiniCoeffFlag = cli.BoolFlag{
 		Name:  "reward-gini-coeff",
 		Usage: "governance gini-coefficient",
