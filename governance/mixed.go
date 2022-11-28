@@ -174,6 +174,7 @@ func (e *MixedEngine) UpdateParams() error {
 	e.handleParamUpdate(e.currentParams, newParams)
 
 	e.currentParams = newParams
+	logger.Error("Updating Param", "newParam", newParams.MintingAmountStr())
 
 	return nil
 }
