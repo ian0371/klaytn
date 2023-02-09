@@ -286,6 +286,7 @@ func (b *CNAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 }
 
 func (b *CNAPIBackend) UpperBoundGasPrice(ctx context.Context) *big.Int {
+	logger.Info("[yum3] api_backend.go:UpperBoundGasPrice", "num", b.CurrentBlock().Number())
 	if b.cn.chainConfig.IsMagmaForkEnabled(b.CurrentBlock().Number()) {
 		return new(big.Int).SetUint64(b.cn.governance.Params().UpperBoundBaseFee())
 	} else {
@@ -294,6 +295,7 @@ func (b *CNAPIBackend) UpperBoundGasPrice(ctx context.Context) *big.Int {
 }
 
 func (b *CNAPIBackend) LowerBoundGasPrice(ctx context.Context) *big.Int {
+	logger.Info("[yum3] api_backend.go:LowerBoundGasPrice", "num", b.CurrentBlock().Number())
 	if b.cn.chainConfig.IsMagmaForkEnabled(b.CurrentBlock().Number()) {
 		return new(big.Int).SetUint64(b.cn.governance.Params().LowerBoundBaseFee())
 	} else {

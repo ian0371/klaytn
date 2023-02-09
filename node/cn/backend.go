@@ -275,9 +275,11 @@ func New(ctx *node.ServiceContext, config *Config) (*CN, error) {
 	blockchain.InitDeriveShaWithGov(cn.chainConfig, governance)
 
 	// Synchronize proposerpolicy & useGiniCoeff
+	logger.Info("[yum3] backend.go:New", "num", bc.CurrentBlock().Number())
 	if cn.blockchain.Config().Istanbul != nil {
 		cn.blockchain.Config().Istanbul.ProposerPolicy = governance.Params().Policy()
 	}
+	logger.Info("[yum3] backend.go:New", "num", bc.CurrentBlock().Number())
 	if cn.blockchain.Config().Governance.Reward != nil {
 		cn.blockchain.Config().Governance.Reward.UseGiniCoeff = governance.Params().UseGiniCoeff()
 	}
@@ -320,6 +322,7 @@ func New(ctx *node.ServiceContext, config *Config) (*CN, error) {
 		logger.Error("Error happened while setting the reward wallet", "err", err)
 	}
 
+	logger.Info("[yum3] backend.go:New", "num", bc.CurrentBlock().Number())
 	if governance.Params().Policy() == uint64(istanbul.WeightedRandom) {
 		// NewStakingManager is called with proper non-nil parameters
 		reward.NewStakingManager(cn.blockchain, governance, cn.chainDB)

@@ -462,6 +462,7 @@ func (g *Governance) updateGovernanceParams() {
 	params.SetProposerUpdateInterval(g.proposerUpdateInterval())
 
 	// NOTE: HumanReadable related functions are inactivated now
+	logger.Info("[yum3] updateGovernanceParams", "num", g.blockChain.CurrentBlock().NumberU64())
 	if v, ok := g.Params().Get(params.ConstTxGasHumanReadable); ok {
 		params.TxGasHumanReadable = v.(uint64)
 	}
@@ -1212,6 +1213,7 @@ func (gov *Governance) IdxCacheFromDb() []uint64 {
 // from database. We need epoch to load any param from database.
 func (gov *Governance) epochWithFallback() uint64 {
 	// After UpdateParams() is called at least once, Params() should contain the Epoch
+	logger.Info("[yum3] epochWithFallback", "num", gov.blockChain.CurrentBlock().NumberU64())
 	if v, ok := gov.Params().Get(params.Epoch); ok {
 		return v.(uint64)
 	}

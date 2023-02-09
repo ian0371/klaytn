@@ -381,9 +381,12 @@ func (gov *Governance) HandleGovernanceVote(valset istanbul.ValidatorSet, votes 
 		}
 
 		number := header.Number.Uint64()
+
 		// Check vote's validity
 		if gVote, ok := gov.ValidateVote(gVote); ok {
+			logger.Info("[yum3] HandleGovernanceVote", "number", number)
 			governanceMode := gov.Params().GovernanceModeInt()
+			logger.Info("[yum3] HandleGovernanceVote", "number", number)
 			governingNode := gov.Params().GoverningNode()
 
 			// Remove old vote with same validator and key
