@@ -119,6 +119,9 @@ func NewMixedEngineNoInit(config *params.ChainConfig, db database.DBManager) *Mi
 }
 
 func (e *MixedEngine) Params() *params.GovParamSet {
+	if e.blockchain != nil {
+		logger.Info("[yum3] Params()", "blockNum", e.blockchain.CurrentBlock().NumberU64(), "params", e.currentParams.StrMap())
+	}
 	return e.currentParams
 }
 
@@ -142,7 +145,9 @@ func (e *MixedEngine) ParamsAt(num uint64) (*params.GovParamSet, error) {
 		return nil, err
 	}
 
-	return e.assembleParams(headerParams, contractParams), nil
+	p := e.assembleParams(headerParams, contractParams)
+	logger.Info("[yum3] ParamsAt()", "num", num, "params", p.StrMap())
+	return p, nil
 }
 
 func (e *MixedEngine) UpdateParams(num uint64) error {
@@ -188,6 +193,7 @@ func (e *MixedEngine) handleParamUpdate(old, new *params.GovParamSet) {
 	// NOTE: key set must be the same, which is guaranteed at NewMixedEngine
 	for k, oldval := range old.IntMap() {
 		if newval := new.MustGet(k); oldval != newval {
+			logger.Info("[yum3] handleParamUpdate()", "blockNum", e.blockchain.CurrentBlock().NumberU64(), "key", GovernanceKeyMapReverse[k], "oldval", oldval, "newval", newval)
 			switch k {
 			// config.Istanbul
 			case params.Epoch:
