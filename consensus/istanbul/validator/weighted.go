@@ -27,6 +27,7 @@ import (
 	"math/big"
 	"math/rand"
 	"reflect"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -34,7 +35,6 @@ import (
 	"sync/atomic"
 
 	"github.com/klaytn/klaytn/common"
-	"github.com/klaytn/klaytn/consensus"
 	"github.com/klaytn/klaytn/consensus/istanbul"
 	"github.com/klaytn/klaytn/fork"
 	"github.com/klaytn/klaytn/params"
@@ -113,7 +113,7 @@ type weightedCouncil struct {
 	stakingInfo *reward.StakingInfo
 
 	blockNum uint64 // block number when council is determined
-	chain    consensus.ChainReader
+	chain    istanbul.ChainReader
 }
 
 func RecoverWeightedCouncilProposer(valSet istanbul.ValidatorSet, proposerAddrs []common.Address) {
@@ -138,7 +138,8 @@ func RecoverWeightedCouncilProposer(valSet istanbul.ValidatorSet, proposerAddrs 
 	weightedCouncil.proposers = proposers
 }
 
-func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, rewards []common.Address, votingPowers []uint64, weights []uint64, policy istanbul.ProposerPolicy, committeeSize uint64, blockNum uint64, proposersBlockNum uint64, chain consensus.ChainReader) *weightedCouncil {
+func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, rewards []common.Address, votingPowers []uint64, weights []uint64, policy istanbul.ProposerPolicy, committeeSize uint64, blockNum uint64, proposersBlockNum uint64, chain istanbul.ChainReader) *weightedCouncil {
+	_, file, line, _ := runtime.Caller(1)
 	if policy != istanbul.WeightedRandom {
 		logger.Error("unsupported proposer policy for weighted council", "policy", policy)
 		return nil
@@ -225,6 +226,7 @@ func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, r
 		logger.Crit("[yum3] chain must not be nil")
 	}
 	valSet.chain = chain
+	logger.Warn("[yum3] NewWeightedCouncil", "caller_file", file, "caller_line", line)
 
 	logger.Trace("Allocate new weightedCouncil", "weightedCouncil", valSet)
 
@@ -374,8 +376,8 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		header := valSet.chain.GetHeaderByHash(prevHash)
-		logger.Warn("[yum3] SubListWithProposer", "header", header)
+		_, file, line, _ := runtime.Caller(1)
+		logger.Warn("[yum3] SubListWithProposer", "prevHash", prevHash, "caller_file", file, "caller_line", line)
 		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, []byte{0, 0, 0, 0})
 		if proposer.Address() != nextProposer.Address() {
 			break
@@ -497,6 +499,8 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, round u
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
+	_, file, line, _ := runtime.Caller(1)
+	logger.Warn("[yum3] CalcProposer", "lastProposer", lastProposer, "caller_file", file, "caller_line", line)
 	newProposer := valSet.selector(valSet, lastProposer, round, []byte{0, 0, 0, 0})
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
@@ -909,6 +913,10 @@ func (valSet *weightedCouncil) SetBlockNum(blockNum uint64) {
 	valSet.blockNum = blockNum
 }
 
+func (valSet *weightedCouncil) SetChain(chain istanbul.ChainReader) {
+	valSet.chain = chain
+}
+
 func (valSet *weightedCouncil) Proposers() []istanbul.Validator {
 	return valSet.proposers
 }
@@ -922,5 +930,7 @@ func (valSet *weightedCouncil) TotalVotingPower() uint64 {
 }
 
 func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
+	_, file, line, _ := runtime.Caller(1)
+	logger.Warn("[yum3] Selector", "lastProposer", lastProposer, "caller_file", file, "caller_line", line)
 	return valSet.selector(valS, lastProposer, round, []byte{0, 0, 0, 0})
 }

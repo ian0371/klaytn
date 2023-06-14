@@ -23,6 +23,7 @@ package istanbul
 import (
 	"strings"
 
+	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/params"
 
 	"github.com/klaytn/klaytn/common"
@@ -65,6 +66,10 @@ func (slice Validators) AddressStringList() []string {
 }
 
 // ----------------------------------------------------------------------------
+
+type ChainReader interface {
+	GetHeaderByNumber(number uint64) *types.Header
+}
 
 type ValidatorSet interface {
 	// Calculate the proposer
@@ -112,6 +117,8 @@ type ValidatorSet interface {
 	Refresh(hash common.Hash, blockNum uint64, config *params.ChainConfig, isSingle bool, governingNode common.Address, minStaking uint64) error
 
 	SetBlockNum(blockNum uint64)
+
+	SetChain(chain ChainReader)
 
 	Proposers() []Validator // TODO-Klaytn-Issue1166 For debugging
 

@@ -833,7 +833,7 @@ func (sb *backend) snapshot(chain consensus.ChainReader, number uint64, hash com
 		}
 		// If an on-disk checkpoint snapshot can be found, use that
 		if number%checkpointInterval == 0 {
-			if s, err := loadSnapshot(sb.db, hash); err == nil {
+			if s, err := loadSnapshot(sb.db, hash, sb.chain); err == nil {
 				logger.Trace("Loaded voting snapshot form disk", "number", number, "hash", hash)
 				snap = s
 				break
