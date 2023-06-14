@@ -931,8 +931,6 @@ func (valSet *weightedCouncil) TotalVotingPower() uint64 {
 	return sum
 }
 
-func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
-	_, file, line, _ := runtime.Caller(1)
-	logger.Warn("[yum3] Selector", "lastProposer", lastProposer, "caller_file", file, "caller_line", line)
-	return valSet.selector(valS, lastProposer, round, []byte{0, 0, 0, 0})
+func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) istanbul.Validator {
+	return valSet.selector(valS, lastProposer, round, mixHash)
 }

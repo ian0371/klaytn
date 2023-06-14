@@ -391,6 +391,6 @@ func (valSet *defaultSet) TotalVotingPower() uint64 {
 	return sum
 }
 
-func (valSet *defaultSet) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
-	return valSet.selector(valS, lastProposer, round, []byte{0, 0, 0, 0})
+func (valSet *defaultSet) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) istanbul.Validator {
+	return valSet.selector(valS, lastProposer, round, mixHash)
 }

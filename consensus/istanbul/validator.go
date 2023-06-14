@@ -124,7 +124,7 @@ type ValidatorSet interface {
 
 	TotalVotingPower() uint64
 
-	Selector(valSet ValidatorSet, lastProposer common.Address, round uint64) Validator
+	Selector(valSet ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) Validator
 }
 
 // ----------------------------------------------------------------------------
