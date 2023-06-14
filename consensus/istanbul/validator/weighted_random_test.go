@@ -290,7 +290,7 @@ func TestWeightedCouncil_RefreshWithZeroWeight(t *testing.T) {
 }
 
 func checkCalcProposerWithRound(t *testing.T, valSet *weightedCouncil, lastProposer common.Address, round uint64) {
-	valSet.CalcProposer(lastProposer, round)
+	valSet.CalcProposer(lastProposer, 0, round)
 	_, expectedVal := valSet.GetByAddress(testExpectedProposers[round%uint64(len(valSet.proposers))])
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, expectedVal) {
 		t.Errorf("proposer mismatch: have %v, want %v", val.String(), expectedVal.Address().String())
@@ -298,7 +298,7 @@ func checkCalcProposerWithRound(t *testing.T, valSet *weightedCouncil, lastPropo
 }
 
 func checkCalcProposerWithBlockNumber(t *testing.T, valSet *weightedCouncil, lastProposer common.Address, round uint64) {
-	valSet.CalcProposer(lastProposer, round)
+	valSet.CalcProposer(lastProposer, 0, round)
 	_, expectedVal := valSet.GetByAddress(testExpectedProposers[valSet.blockNum%uint64(len(valSet.proposers))])
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, expectedVal) {
 		t.Errorf("proposer mismatch: have %v, want %v", val.String(), expectedVal.Address().String())
@@ -306,7 +306,7 @@ func checkCalcProposerWithBlockNumber(t *testing.T, valSet *weightedCouncil, las
 }
 
 func checkCalcProposerWithBlockNumberAndRound(t *testing.T, valSet *weightedCouncil, lastProposer common.Address, round uint64) {
-	valSet.CalcProposer(lastProposer, round)
+	valSet.CalcProposer(lastProposer, 0, round)
 	_, expectedVal := valSet.GetByAddress(testExpectedProposers[(valSet.blockNum+round)%uint64(len(valSet.proposers))])
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, expectedVal) {
 		t.Errorf("proposer mismatch: have %v, want %v", val.String(), expectedVal.Address().String())
@@ -503,7 +503,7 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 	for testSubsetLen := 2; testSubsetLen < len(validators); testSubsetLen++ {
 		// set committee size and calculate proposer
 		valSet.SetSubGroupSize(uint64(testSubsetLen))
-		valSet.CalcProposer(valSet.GetProposer().Address(), uint64(0))
+		valSet.CalcProposer(valSet.GetProposer().Address(), 0, uint64(0))
 
 		// get committee list
 		expectSubList := getExpectSubList(expectIndexOfSubsetLenTest[0:testSubsetLen])
@@ -523,7 +523,7 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 	valSet.SetSubGroupSize(uint64(len(validators) - 1))
 	for round := 0; round < len(expectIndexOfRoundTestBeforeIstanbulCompatible); round++ {
 		// calculate proposer and set view with test round value
-		valSet.CalcProposer(valSet.GetProposer().Address(), uint64(round))
+		valSet.CalcProposer(valSet.GetProposer().Address(), 0, uint64(round))
 
 		// get committee list
 		expectSubListBeforeHF := getExpectSubList(expectIndexOfRoundTestBeforeIstanbulCompatible[round])

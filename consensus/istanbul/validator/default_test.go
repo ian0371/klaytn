@@ -250,7 +250,7 @@ func TestDefaultSet_SubList(t *testing.T) {
 		assert.Equal(t, testAddresses[i%lenAddress].String(), committee[0].String())
 		assert.Equal(t, testAddresses[(i+1)%lenAddress].String(), committee[1].String())
 
-		valSet.CalcProposer(currentProposer.Address(), view.Round.Uint64())
+		valSet.CalcProposer(currentProposer.Address(), view.Sequence.Uint64(), view.Round.Uint64())
 	}
 }
 

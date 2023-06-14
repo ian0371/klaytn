@@ -378,7 +378,8 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 		}
 		_, file, line, _ := runtime.Caller(1)
 		logger.Warn("[yum3] SubListWithProposer", "prevHash", prevHash, "caller_file", file, "caller_line", line)
-		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, []byte{0, 0, 0, 0})
+		header := valSet.chain.GetHeaderByNumber(view.Sequence.Uint64())
+		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, header.Extra)
 		if proposer.Address() != nextProposer.Address() {
 			break
 		}
@@ -495,13 +496,14 @@ func (valSet *weightedCouncil) chooseProposerByRoundRobin(lastProposer common.Ad
 	return valSet.validators[pick]
 }
 
-func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, round uint64) {
+func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, blockNum uint64, round uint64) {
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
 	_, file, line, _ := runtime.Caller(1)
 	logger.Warn("[yum3] CalcProposer", "lastProposer", lastProposer, "caller_file", file, "caller_line", line)
-	newProposer := valSet.selector(valSet, lastProposer, round, []byte{0, 0, 0, 0})
+	header := valSet.chain.GetHeaderByNumber(blockNum)
+	newProposer := valSet.selector(valSet, lastProposer, round, header.Extra)
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
 			// TODO-Klaytn We must make a policy about the mininum number of validators, which can prevent this case.
