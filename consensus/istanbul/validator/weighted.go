@@ -113,6 +113,7 @@ type weightedCouncil struct {
 	stakingInfo *reward.StakingInfo
 
 	blockNum uint64 // block number when council is determined
+	chain    consensus.ChainReader
 }
 
 func RecoverWeightedCouncilProposer(valSet istanbul.ValidatorSet, proposerAddrs []common.Address) {
@@ -220,6 +221,10 @@ func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, r
 	valSet.proposers = make([]istanbul.Validator, len(addrs))
 	copy(valSet.proposers, valSet.validators)
 	valSet.proposersBlockNum = proposersBlockNum
+	if chain == nil {
+		logger.Crit("[yum3] chain must not be nil")
+	}
+	valSet.chain = chain
 
 	logger.Trace("Allocate new weightedCouncil", "weightedCouncil", valSet)
 
@@ -264,7 +269,7 @@ func GetWeightedCouncilData(valSet istanbul.ValidatorSet) (validators []common.A
 	return
 }
 
-func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
+func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) istanbul.Validator {
 	weightedCouncil, ok := valSet.(*weightedCouncil)
 	if !ok {
 		logger.Error("weightedRandomProposer() Not weightedCouncil type.")
@@ -369,7 +374,9 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx)
+		header := valSet.chain.GetHeaderByHash(prevHash)
+		logger.Warn("[yum3] SubListWithProposer", "header", header)
+		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, []byte{0, 0, 0, 0})
 		if proposer.Address() != nextProposer.Address() {
 			break
 		}
@@ -490,7 +497,7 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, round u
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
-	newProposer := valSet.selector(valSet, lastProposer, round)
+	newProposer := valSet.selector(valSet, lastProposer, round, []byte{0, 0, 0, 0})
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
 			// TODO-Klaytn We must make a policy about the mininum number of validators, which can prevent this case.
@@ -612,11 +619,14 @@ func (valSet *weightedCouncil) Policy() istanbul.ProposerPolicy { return valSet.
 
 // Refresh recalculates up-to-date proposers only when blockNum is the proposer update interval.
 // It returns an error if it can't make up-to-date proposers
-//   (1) due toe wrong parameters
-//   (2) due to lack of staking information
+//
+//	(1) due toe wrong parameters
+//	(2) due to lack of staking information
+//
 // It returns no error when weightedCouncil:
-//   (1) already has up-do-date proposers
-//   (2) successfully calculated up-do-date proposers
+//
+//	(1) already has up-do-date proposers
+//	(2) successfully calculated up-do-date proposers
 func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config *params.ChainConfig, isSingle bool, governingNode common.Address, minStaking uint64) error {
 	// TODO-Klaytn-Governance divide the following logic into two parts: proposers update / validators update
 	valSet.validatorMu.Lock()
@@ -749,8 +759,8 @@ func filterValidators(isSingleMode bool, govNodeAddr common.Address, weightedVal
 
 // getStakingAmountsOfValidators calculates stakingAmounts of validators.
 // If validators have multiple staking contracts, stakingAmounts will be a sum of stakingAmounts with the same rewardAddress.
-//  - []*weightedValidator : a list of validators which type is converted to weightedValidator
-//  - []float64 : a list of stakingAmounts.
+//   - []*weightedValidator : a list of validators which type is converted to weightedValidator
+//   - []float64 : a list of stakingAmounts.
 func getStakingAmountsOfValidators(validators istanbul.Validators, stakingInfo *reward.StakingInfo) ([]*weightedValidator, []float64, error) {
 	numValidators := len(validators)
 	weightedValidators := make([]*weightedValidator, numValidators)
@@ -912,5 +922,5 @@ func (valSet *weightedCouncil) TotalVotingPower() uint64 {
 }
 
 func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
-	return valSet.selector(valS, lastProposer, round)
+	return valSet.selector(valS, lastProposer, round, []byte{0, 0, 0, 0})
 }

@@ -122,4 +122,4 @@ type ValidatorSet interface {
 
 // ----------------------------------------------------------------------------
 
-type ProposalSelector func(ValidatorSet, common.Address, uint64) Validator
+type ProposalSelector func(ValidatorSet, common.Address, uint64, []byte) Validator
