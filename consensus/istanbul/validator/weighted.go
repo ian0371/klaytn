@@ -21,6 +21,7 @@
 package validator
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -139,7 +140,6 @@ func RecoverWeightedCouncilProposer(valSet istanbul.ValidatorSet, proposerAddrs 
 }
 
 func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, rewards []common.Address, votingPowers []uint64, weights []uint64, policy istanbul.ProposerPolicy, committeeSize uint64, blockNum uint64, proposersBlockNum uint64, chain istanbul.ChainReader) *weightedCouncil {
-	_, file, line, _ := runtime.Caller(1)
 	if policy != istanbul.WeightedRandom {
 		logger.Error("unsupported proposer policy for weighted council", "policy", policy)
 		return nil
@@ -223,10 +223,9 @@ func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, r
 	copy(valSet.proposers, valSet.validators)
 	valSet.proposersBlockNum = proposersBlockNum
 	if chain == nil {
-		logger.Crit("[yum3] chain must not be nil")
+		logger.Crit("NewWeightedCouncil chain must not be nil")
 	}
 	valSet.chain = chain
-	logger.Warn("[yum3] NewWeightedCouncil", "caller_file", file, "caller_line", line)
 
 	logger.Trace("Allocate new weightedCouncil", "weightedCouncil", valSet)
 
@@ -286,9 +285,17 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 
 	// At Refresh(), proposers is already randomly shuffled considering weights.
 	// So let's just round robin this array
-	blockNum := weightedCouncil.blockNum
-	picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
-	proposer := weightedCouncil.proposers[picker]
+	// blockNum := weightedCouncil.blockNum
+	// picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
+	picker := new(big.Int).Add(new(big.Int).SetBytes(mixHash), new(big.Int).SetUint64(round))
+	picker = new(big.Int).Mod(picker, new(big.Int).SetUint64(uint64(numProposers)))
+	logger.Info("[yum3] weightedRandomProposer",
+		"mixHash", mixHash,
+		"mixHash bigint", new(big.Int).SetBytes(mixHash).Uint64(),
+		"round", round, "picker", picker.Uint64(),
+		"numProposers", numProposers,
+	)
+	proposer := weightedCouncil.proposers[picker.Uint64()]
 
 	// Enable below more detailed log when debugging
 	// logger.Trace("Select a proposer using weighted random", "proposer", proposer.String(), "picker", picker, "blockNum of council", blockNum, "round", round, "blockNum of proposers updated", weightedCouncil.proposersBlockNum, "number of proposers", numProposers, "all proposers", weightedCouncil.proposers)
@@ -376,10 +383,10 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		_, file, line, _ := runtime.Caller(1)
-		logger.Warn("[yum3] SubListWithProposer", "prevHash", prevHash, "caller_file", file, "caller_line", line)
 		header := valSet.chain.GetHeaderByNumber(view.Sequence.Uint64())
-		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, header.Extra)
+		mixHash := make([]byte, 8)
+		binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
+		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, mixHash)
 		if proposer.Address() != nextProposer.Address() {
 			break
 		}
@@ -496,14 +503,21 @@ func (valSet *weightedCouncil) chooseProposerByRoundRobin(lastProposer common.Ad
 	return valSet.validators[pick]
 }
 
-func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, blockNum uint64, round uint64) {
+func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, prevBlockNum uint64, round uint64) {
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
-	_, file, line, _ := runtime.Caller(1)
-	logger.Warn("[yum3] CalcProposer", "lastProposer", lastProposer, "caller_file", file, "caller_line", line)
-	header := valSet.chain.GetHeaderByNumber(blockNum)
-	newProposer := valSet.selector(valSet, lastProposer, round, header.Extra)
+	if valSet.chain == nil {
+		logger.Crit("CalcProposer chain is nil. how?", "prevBlockNum", prevBlockNum)
+	}
+	header := valSet.chain.GetHeaderByNumber(prevBlockNum)
+	if header == nil {
+		logger.Crit("[yum3] header is nil", "prevBlockNum", prevBlockNum)
+	}
+
+	mixHash := make([]byte, 8)
+	binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
+	newProposer := valSet.selector(valSet, lastProposer, round, mixHash)
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
 			// TODO-Klaytn We must make a policy about the mininum number of validators, which can prevent this case.
@@ -600,6 +614,7 @@ func (valSet *weightedCouncil) Copy() istanbul.ValidatorSet {
 		stakingInfo:       valSet.stakingInfo,
 		proposersBlockNum: valSet.proposersBlockNum,
 		blockNum:          valSet.blockNum,
+		chain:             valSet.chain,
 	}
 	newWeightedCouncil.validators = make([]istanbul.Validator, len(valSet.validators))
 	copy(newWeightedCouncil.validators, valSet.validators)
@@ -916,6 +931,11 @@ func (valSet *weightedCouncil) SetBlockNum(blockNum uint64) {
 }
 
 func (valSet *weightedCouncil) SetChain(chain istanbul.ChainReader) {
+	if chain == nil {
+		_, file, line, _ := runtime.Caller(1)
+		logger.Error("SetChain chain is nil. ignoring", "file", file, "line", line)
+		return
+	}
 	valSet.chain = chain
 }
 
