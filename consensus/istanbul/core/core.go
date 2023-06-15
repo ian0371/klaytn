@@ -273,8 +273,7 @@ func (c *core) startNewRound(round *big.Int) {
 	// New snapshot for new round
 	c.updateRoundState(newView, c.valSet, roundChange)
 	// Calculate new proposer
-	logger.Info("[yum3] CalcProposer from startNewRound", "block", newView.Sequence.Uint64()-1)
-	c.valSet.CalcProposer(lastProposer, newView.Sequence.Uint64()-1, newView.Round.Uint64())
+	c.valSet.CalcProposer(lastProposer, newView.Sequence.Uint64(), newView.Round.Uint64())
 	c.waitingForRoundChange = false
 	c.setState(StateAcceptRequest)
 	if roundChange && c.isProposer() && c.current != nil {

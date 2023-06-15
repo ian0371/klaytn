@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
-	"runtime"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -51,8 +50,8 @@ const (
 	// inmemoryPeers      = 40
 	// inmemoryMessages   = 1024
 
-	checkpointInterval = 16 // Number of blocks after which to save the vote snapshot to the database
-	inmemorySnapshots  = 8  // Number of recent vote snapshots to keep in memory
+	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
+	inmemorySnapshots  = 496  // Number of recent vote snapshots to keep in memory
 	inmemoryPeers      = 200
 	inmemoryMessages   = 4096
 
@@ -772,7 +771,6 @@ func (sb *backend) GetConsensusInfo(block *types.Block) (consensus.ConsensusInfo
 	lastProposer := sb.GetProposer(blockNumber - 1)
 
 	newValSet := snap.ValSet.Copy()
-	logger.Info("[yum3] CalcProposer from GetConsensusInfo", "block", snap.Number)
 	newValSet.CalcProposer(lastProposer, snap.Number, 0)
 	originProposer = newValSet.GetProposer().Address()
 
@@ -826,11 +824,6 @@ func (sb *backend) snapshot(chain consensus.ChainReader, number uint64, hash com
 		headers []*types.Header
 		snap    *Snapshot
 	)
-
-	if chain == nil {
-		_, file, line, _ := runtime.Caller(1)
-		logger.Crit("snapshot chain is nil", "file", file, "line", line)
-	}
 
 	for snap == nil {
 		// If an in-memory snapshot was found, use that

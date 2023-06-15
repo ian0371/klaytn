@@ -285,16 +285,12 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 
 	// At Refresh(), proposers is already randomly shuffled considering weights.
 	// So let's just round robin this array
-	// blockNum := weightedCouncil.blockNum
-	// picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
-	picker := new(big.Int).Add(new(big.Int).SetBytes(mixHash), new(big.Int).SetUint64(round))
-	picker = new(big.Int).Mod(picker, new(big.Int).SetUint64(uint64(numProposers)))
-	logger.Info("[yum3] weightedRandomProposer",
-		"mixHash", mixHash,
-		"mixHash bigint", new(big.Int).SetBytes(mixHash).Uint64(),
-		"round", round, "picker", picker.Uint64(),
-		"numProposers", numProposers,
-	)
+	mixHashBigInt := new(big.Int).SetBytes(mixHash)
+	roundBigInt := new(big.Int).SetUint64(round)
+	numProposersBigInt := new(big.Int).SetUint64(uint64(numProposers))
+
+	pickerBigInt := new(big.Int).Add(mixHashBigInt, roundBigInt)
+	picker := new(big.Int).Mod(pickerBigInt, numProposersBigInt)
 	proposer := weightedCouncil.proposers[picker.Uint64()]
 
 	// Enable below more detailed log when debugging
@@ -383,7 +379,7 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		header := valSet.chain.GetHeaderByNumber(view.Sequence.Uint64())
+		header := valSet.chain.GetHeaderByHash(prevHash)
 		mixHash := make([]byte, 8)
 		binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
 		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, mixHash)
@@ -503,18 +499,11 @@ func (valSet *weightedCouncil) chooseProposerByRoundRobin(lastProposer common.Ad
 	return valSet.validators[pick]
 }
 
-func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, prevBlockNum uint64, round uint64) {
+func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, newBlockNum uint64, round uint64) {
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
-	if valSet.chain == nil {
-		logger.Crit("CalcProposer chain is nil. how?", "prevBlockNum", prevBlockNum)
-	}
-	header := valSet.chain.GetHeaderByNumber(prevBlockNum)
-	if header == nil {
-		logger.Crit("[yum3] header is nil", "prevBlockNum", prevBlockNum)
-	}
-
+	header := valSet.chain.GetHeaderByNumber(newBlockNum - 1)
 	mixHash := make([]byte, 8)
 	binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
 	newProposer := valSet.selector(valSet, lastProposer, round, mixHash)

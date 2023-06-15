@@ -90,7 +90,7 @@ func newSnapshot(gov governance.Engine, number uint64, hash common.Hash, valSet 
 // loadSnapshot loads an existing snapshot from the database.
 func loadSnapshot(db database.DBManager, hash common.Hash, chain istanbul.ChainReader) (*Snapshot, error) {
 	if chain == nil {
-		logger.Crit("[yum3] loadSnapshot chain is nil")
+		logger.Crit("loadSnapshot chain is nil")
 	}
 	blob, err := db.ReadIstanbulSnapshot(hash)
 	if err != nil {

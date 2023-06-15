@@ -69,6 +69,7 @@ func (slice Validators) AddressStringList() []string {
 
 type ChainReader interface {
 	GetHeaderByNumber(number uint64) *types.Header
+	GetHeaderByHash(hash common.Hash) *types.Header
 }
 
 type ValidatorSet interface {
