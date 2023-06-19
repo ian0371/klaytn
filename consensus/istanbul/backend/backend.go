@@ -217,7 +217,7 @@ func (sb *backend) getTargetReceivers(prevHash common.Hash, valSet istanbul.Vali
 	}
 
 	proposer := valSet.GetProposer()
-	header := sb.chain.GetHeaderByNumber(view.Sequence.Uint64() - 1)
+	header := sb.chain.GetHeaderByHash(prevHash)
 	mixHash := make([]byte, 8)
 	binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
 	for i := 0; i < 2; i++ {

@@ -50,8 +50,8 @@ const (
 	// inmemoryPeers      = 40
 	// inmemoryMessages   = 1024
 
-	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
-	inmemorySnapshots  = 496  // Number of recent vote snapshots to keep in memory
+	checkpointInterval = 8 // Number of blocks after which to save the vote snapshot to the database
+	inmemorySnapshots  = 4 // Number of recent vote snapshots to keep in memory
 	inmemoryPeers      = 200
 	inmemoryMessages   = 4096
 
@@ -771,7 +771,7 @@ func (sb *backend) GetConsensusInfo(block *types.Block) (consensus.ConsensusInfo
 	lastProposer := sb.GetProposer(blockNumber - 1)
 
 	newValSet := snap.ValSet.Copy()
-	newValSet.CalcProposer(lastProposer, snap.Number, 0)
+	newValSet.CalcProposer(lastProposer, blockNumber, 0)
 	originProposer = newValSet.GetProposer().Address()
 
 	// get the committee list of this block at the view (blockNumber, round)
