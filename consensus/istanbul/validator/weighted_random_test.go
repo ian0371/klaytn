@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/common"
 	"github.com/klaytn/klaytn/consensus/istanbul"
 	"github.com/klaytn/klaytn/crypto"
@@ -125,9 +126,50 @@ func makeTestValidators(weights []uint64) (validators istanbul.Validators) {
 	return
 }
 
+type testBlockChain struct {
+	Number *big.Int
+	config *params.ChainConfig
+}
+
+func newTestBlockchain(config *params.ChainConfig) *testBlockChain {
+	return &testBlockChain{
+		Number: big.NewInt(1),
+		config: config,
+	}
+}
+
+func (bc *testBlockChain) GetHeaderByNumber(val uint64) *types.Header {
+	return &types.Header{
+		Number: bc.Number,
+	}
+}
+
+func (bc *testBlockChain) GetHeaderByHash(hash common.Hash) *types.Header {
+	return &types.Header{
+		Number: bc.Number,
+	}
+}
+
+func (bc *testBlockChain) Config() *params.ChainConfig {
+	return bc.config
+}
+
+func (bc *testBlockChain) SetBlockNum(num uint64) {
+	bc.Number = new(big.Int).SetUint64(num)
+}
+
 func makeTestWeightedCouncil(weights []uint64) (valSet *weightedCouncil) {
-	// prepare weighted council
 	valSet = NewWeightedCouncil(testAddrs, nil, testRewardAddrs, testVotingPowers, weights, istanbul.WeightedRandom, 21, 0, 0, nil)
+	return
+}
+
+func makeTestWeightedCouncilKIP146(weights []uint64) (valSet *weightedCouncil) {
+	// prepare weighted council
+	config := &params.ChainConfig{
+		KoreCompatibleBlock: common.Big0,
+	}
+	bc := newTestBlockchain(config)
+	valSet = NewWeightedCouncil(testAddrs, nil, testRewardAddrs, testVotingPowers, weights, istanbul.WeightedRandom, 21, 0, 0, bc)
 	return
 }
 
@@ -535,6 +577,25 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 		assert.Equal(t, expectSubListBeforeHF, valSet.SubList(prevHash, viewBeforeHF), "test round: %d(before istanbulCompatible)", round)
 		assert.Equal(t, expectSubListAfterHF, valSet.SubList(prevHash, viewAfterHF), "test round: %d(after istanbulCompatible)", round)
 	}
+}
+
+func TestWeightedCouncil_SubListWithProposerKIP146(t *testing.T) {
+	var (
+		validators    = makeTestValidators(testNonZeroWeights)
+		prevHash      = crypto.Keccak256Hash([]byte("This is a test"))
+		valSet        = makeTestWeightedCouncilKIP146(testNonZeroWeights)
+		committeeSize = uint64(5)
+		pendingBlock  = uint64(1)
+		round         = uint64(0)
+	)
+
+	valSet.SetBlockNum(pendingBlock)
+	valSet.SetSubGroupSize(committeeSize)
+	valSet.CalcProposer(valSet.GetProposer().Address(), pendingBlock, round)
+	committee := valSet.SubList(prevHash, &istanbul.View{Sequence: big.NewInt(int64(pendingBlock)), Round: big.NewInt(int64(round))})
+	selected := SelectKIP146Committee(validators, committeeSize, int64(pendingBlock), round)
+	assert.Equal(t, selected, committee)
+	assert.Contains(t, committee, valSet.GetProposer())
 }
 
 func TestWeightedCouncil_Copy(t *testing.T) {

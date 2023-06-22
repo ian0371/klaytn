@@ -22,7 +22,6 @@ package backend
 
 import (
 	"crypto/ecdsa"
-	"encoding/binary"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -217,9 +216,6 @@ func (sb *backend) getTargetReceivers(prevHash common.Hash, valSet istanbul.Vali
 	}
 
 	proposer := valSet.GetProposer()
-	header := sb.chain.GetHeaderByHash(prevHash)
-	mixHash := make([]byte, 8)
-	binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
 	for i := 0; i < 2; i++ {
 		committee := valSet.SubListWithProposer(prevHash, proposer.Address(), view)
 		for _, val := range committee {
@@ -228,7 +224,12 @@ func (sb *backend) getTargetReceivers(prevHash common.Hash, valSet istanbul.Vali
 			}
 		}
 		view.Round = view.Round.Add(view.Round, common.Big1)
-		proposer = valSet.Selector(valSet, common.Address{}, view.Round.Uint64(), mixHash)
+		header := sb.chain.GetHeaderByHash(prevHash)
+		if header != nil {
+			proposer = valSet.Selector(valSet, common.Address{}, view.Round.Uint64(), header.Number.Int64())
+		} else {
+			proposer = valSet.Selector(valSet, common.Address{}, view.Round.Uint64(), 0)
+		}
 	}
 	return targets
 }

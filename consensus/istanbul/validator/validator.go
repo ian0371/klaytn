@@ -139,3 +139,9 @@ func SelectRandomCommittee(validators []istanbul.Validator, committeeSize uint64
 
 	return committee
 }
+
+func SelectKIP146Committee(validators []istanbul.Validator, committeeSize uint64, seed int64, round uint64) []istanbul.Validator {
+	shuffled := shuffleValidatorsKIP146(validators, round, seed)
+	shuffled = append(shuffled[round:], shuffled[0:round]...)
+	return shuffled[:committeeSize]
+}

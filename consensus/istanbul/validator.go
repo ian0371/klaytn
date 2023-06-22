@@ -70,6 +70,7 @@ func (slice Validators) AddressStringList() []string {
 type ChainReader interface {
 	GetHeaderByNumber(number uint64) *types.Header
 	GetHeaderByHash(hash common.Hash) *types.Header
+	Config() *params.ChainConfig
 }
 
 type ValidatorSet interface {
@@ -125,9 +126,9 @@ type ValidatorSet interface {
 
 	TotalVotingPower() uint64
 
-	Selector(valSet ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) Validator
+	Selector(valSet ValidatorSet, lastProposer common.Address, round uint64, seed int64) Validator
 }
 
 // ----------------------------------------------------------------------------
 
-type ProposalSelector func(ValidatorSet, common.Address, uint64, []byte) Validator
+type ProposalSelector func(ValidatorSet, common.Address, uint64, int64) Validator

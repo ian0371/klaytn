@@ -21,7 +21,6 @@
 package validator
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -216,16 +215,17 @@ func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, r
 		valSet.proposer.Store(valSet.GetByIndex(0))
 	}
 	valSet.SetSubGroupSize(committeeSize)
-	valSet.selector = weightedRandomProposer
+	if chain != nil && chain.Config() != nil && chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(blockNum+1)) {
+		valSet.selector = weightedRandomProposerKIP146
+		valSet.chain = chain
+	} else {
+		valSet.selector = weightedRandomProposer
+	}
 
 	valSet.blockNum = blockNum
 	valSet.proposers = make([]istanbul.Validator, len(addrs))
 	copy(valSet.proposers, valSet.validators)
 	valSet.proposersBlockNum = proposersBlockNum
-	if chain == nil {
-		logger.Crit("NewWeightedCouncil chain must not be nil")
-	}
-	valSet.chain = chain
 
 	logger.Trace("Allocate new weightedCouncil", "weightedCouncil", valSet)
 
@@ -270,7 +270,7 @@ func GetWeightedCouncilData(valSet istanbul.ValidatorSet) (validators []common.A
 	return
 }
 
-func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) istanbul.Validator {
+func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
 	weightedCouncil, ok := valSet.(*weightedCouncil)
 	if !ok {
 		logger.Error("weightedRandomProposer() Not weightedCouncil type.")
@@ -285,18 +285,44 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 
 	// At Refresh(), proposers is already randomly shuffled considering weights.
 	// So let's just round robin this array
-	mixHashBigInt := new(big.Int).SetBytes(mixHash)
-	roundBigInt := new(big.Int).SetUint64(round)
-	numProposersBigInt := new(big.Int).SetUint64(uint64(numProposers))
-
-	pickerBigInt := new(big.Int).Add(mixHashBigInt, roundBigInt)
-	picker := new(big.Int).Mod(pickerBigInt, numProposersBigInt)
-	proposer := weightedCouncil.proposers[picker.Uint64()]
+	blockNum := weightedCouncil.blockNum
+	picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
+	proposer := weightedCouncil.proposers[picker]
 
 	// Enable below more detailed log when debugging
 	// logger.Trace("Select a proposer using weighted random", "proposer", proposer.String(), "picker", picker, "blockNum of council", blockNum, "round", round, "blockNum of proposers updated", weightedCouncil.proposersBlockNum, "number of proposers", numProposers, "all proposers", weightedCouncil.proposers)
 
 	return proposer
+}
+
+func weightedRandomProposerKIP146(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
+	shuffled := shuffleValidatorsKIP146(valSet.List(), round, seed)
+	return shuffled[round%uint64(len(shuffled))]
+}
+
+func shuffleValidatorsKIP146(validators istanbul.Validators, round uint64, seed int64) istanbul.Validators {
+	ret := make(istanbul.Validators, len(validators))
+	copy(ret, validators)
+
+	r := rand.New(rand.NewSource(seed))
+
+	r.Shuffle(len(ret), func(x, y int) {
+		ret[x], ret[y] = ret[y], ret[x]
+	})
+
+	for i := 0; i < int(round); i++ {
+		// remove proposer at round i and shuffle
+		tmp := ret[i+1:]
+		if len(tmp) == 0 {
+			break
+		}
+
+		r.Shuffle(len(tmp), func(x, y int) {
+			tmp[x], tmp[y] = tmp[y], tmp[x]
+		})
+	}
+
+	return ret
 }
 
 func (valSet *weightedCouncil) Size() uint64 {
@@ -356,6 +382,30 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 		return validators
 	}
 
+	if valSet.chain != nil {
+		header := valSet.chain.GetHeaderByHash(prevHash)
+		pendingHeaderNumber := new(big.Int).Add(header.Number, common.Big1)
+
+		if valSet.chain.Config().IsKoreForkEnabled(pendingHeaderNumber) {
+			committee := SelectKIP146Committee(validators, committeeSize, 1, view.Round.Uint64())
+			proposerInCommittee := false
+			for _, member := range committee {
+				if proposerAddr == member.Address() {
+					proposerInCommittee = true
+					break
+				}
+			}
+
+			// highly unlikely. Add proposer if not in committee
+			if !proposerInCommittee {
+				_, proposer := valSet.getByAddress(proposerAddr)
+				committee = append(committee[:len(committee)-1], proposer)
+			}
+
+			return committee
+		}
+	}
+
 	// find the proposer
 	proposerIdx, proposer := valSet.getByAddress(proposerAddr)
 	if proposerIdx < 0 {
@@ -379,10 +429,7 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		header := valSet.chain.GetHeaderByHash(prevHash)
-		mixHash := make([]byte, 8)
-		binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
-		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, mixHash)
+		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, 0)
 		if proposer.Address() != nextProposer.Address() {
 			break
 		}
@@ -499,14 +546,20 @@ func (valSet *weightedCouncil) chooseProposerByRoundRobin(lastProposer common.Ad
 	return valSet.validators[pick]
 }
 
-func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, newBlockNum uint64, round uint64) {
+func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, pendingBlockNum uint64, round uint64) {
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
-	header := valSet.chain.GetHeaderByNumber(newBlockNum - 1)
-	mixHash := make([]byte, 8)
-	binary.BigEndian.PutUint64(mixHash, header.Number.Uint64())
-	newProposer := valSet.selector(valSet, lastProposer, round, mixHash)
+	var newProposer istanbul.Validator
+
+	if valSet.chain != nil && valSet.chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(pendingBlockNum)) {
+		header := valSet.chain.GetHeaderByNumber(pendingBlockNum - 1)
+		seed := header.Number.Int64()
+		newProposer = valSet.selector(valSet, lastProposer, round, seed)
+	} else {
+		newProposer = valSet.selector(valSet, lastProposer, round, 0)
+	}
+
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
 			// TODO-Klaytn We must make a policy about the mininum number of validators, which can prevent this case.
@@ -638,6 +691,13 @@ func (valSet *weightedCouncil) Policy() istanbul.ProposerPolicy { return valSet.
 //	(1) already has up-do-date proposers
 //	(2) successfully calculated up-do-date proposers
 func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config *params.ChainConfig, isSingle bool, governingNode common.Address, minStaking uint64) error {
+	// if next block is hardfork, change the selector
+	// do not use IsKoreForkEnabled, but use IsKoreForkBlock instead
+	if config.IsKoreForkEnabled(new(big.Int).SetUint64(blockNum + 1)) {
+		valSet.selector = weightedRandomProposerKIP146
+		return nil
+	}
+
 	// TODO-Klaytn-Governance divide the following logic into two parts: proposers update / validators update
 	valSet.validatorMu.Lock()
 	defer valSet.validatorMu.Unlock()
@@ -940,6 +1000,6 @@ func (valSet *weightedCouncil) TotalVotingPower() uint64 {
 	return sum
 }
 
-func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, mixHash []byte) istanbul.Validator {
-	return valSet.selector(valS, lastProposer, round, mixHash)
+func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
+	return valSet.selector(valS, lastProposer, round, seed)
 }
