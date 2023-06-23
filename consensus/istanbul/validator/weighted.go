@@ -281,20 +281,19 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 		return nil
 	}
 
-	var proposer istanbul.Validator
-
 	// checking blockNum + 1 makes activation = hardfork
 	if config != nil && config.IsKoreForkEnabled(new(big.Int).SetUint64(weightedCouncil.blockNum+1)) {
 		validators := valSet.List()
 		shuffled := shuffleValidatorsKIP146(validators, round, seed)
-		proposer = shuffled[round%uint64(len(validators))]
-	} else {
-		// At Refresh(), proposers is already randomly shuffled considering weights.
-		// So let's just round robin this array
-		blockNum := weightedCouncil.blockNum
-		picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
-		proposer = weightedCouncil.proposers[picker]
+		proposer := shuffled[round%uint64(len(validators))]
+		return proposer
 	}
+
+	// At Refresh(), proposers is already randomly shuffled considering weights.
+	// So let's just round robin this array
+	blockNum := weightedCouncil.blockNum
+	picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
+	proposer := weightedCouncil.proposers[picker]
 
 	// Enable below more detailed log when debugging
 	// logger.Trace("Select a proposer using weighted random", "proposer", proposer.String(), "picker", picker, "blockNum of council", blockNum, "round", round, "blockNum of proposers updated", weightedCouncil.proposersBlockNum, "number of proposers", numProposers, "all proposers", weightedCouncil.proposers)
@@ -550,14 +549,12 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, round u
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
-	var newProposer istanbul.Validator
-
+	seed := int64(valSet.blockNum)
 	var config *params.ChainConfig
 	if valSet.chain != nil {
 		config = valSet.chain.Config()
 	}
-	seed := int64(valSet.blockNum)
-	newProposer = valSet.selector(valSet, lastProposer, round, seed, config)
+	newProposer := valSet.selector(valSet, lastProposer, round, seed, config)
 
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
