@@ -283,9 +283,9 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 	}
 
 	// checking blockNum + 1 makes activation = hardfork
-	if config != nil && config.IsKoreForkEnabled(new(big.Int).SetUint64(weightedCouncil.blockNum+1)) {
+	if weightedCouncil.chain != nil && weightedCouncil.chain.Config() != nil && weightedCouncil.chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(weightedCouncil.blockNum+1)) {
 		validators := valSet.List()
-		shuffled := shuffleValidatorsKIP146(validators, round, seed)
+		shuffled := shuffleValidatorsKIP146(validators, round, weightedCouncil.seed)
 		proposer := shuffled[round%uint64(len(validators))]
 		return proposer
 	}
