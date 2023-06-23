@@ -115,17 +115,17 @@ func TestNormalValSet(t *testing.T) {
 	}
 	// test calculate proposer
 	lastProposer := addr1
-	valSet.CalcProposer(lastProposer, 1, uint64(0))
+	valSet.CalcProposer(lastProposer, uint64(0))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
-	valSet.CalcProposer(lastProposer, 1, uint64(3))
+	valSet.CalcProposer(lastProposer, uint64(3))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val1) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val1)
 	}
 	// test empty last proposer
 	lastProposer = common.Address{}
-	valSet.CalcProposer(lastProposer, 1, uint64(3))
+	valSet.CalcProposer(lastProposer, uint64(3))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
@@ -194,18 +194,18 @@ func TestStickyProposer(t *testing.T) {
 	}
 	// test calculate proposer
 	lastProposer := addr1
-	valSet.CalcProposer(lastProposer, 1, uint64(0))
+	valSet.CalcProposer(lastProposer, uint64(0))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val1) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val1)
 	}
 
-	valSet.CalcProposer(lastProposer, 1, uint64(1))
+	valSet.CalcProposer(lastProposer, uint64(1))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
 	// test empty last proposer
 	lastProposer = common.Address{}
-	valSet.CalcProposer(lastProposer, 1, uint64(3))
+	valSet.CalcProposer(lastProposer, uint64(3))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
@@ -250,7 +250,7 @@ func TestDefaultSet_SubList(t *testing.T) {
 		assert.Equal(t, testAddresses[i%lenAddress].String(), committee[0].String())
 		assert.Equal(t, testAddresses[(i+1)%lenAddress].String(), committee[1].String())
 
-		valSet.CalcProposer(currentProposer.Address(), view.Sequence.Uint64(), view.Round.Uint64())
+		valSet.CalcProposer(currentProposer.Address(), view.Round.Uint64())
 	}
 }
 

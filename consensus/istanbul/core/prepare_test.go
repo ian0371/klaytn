@@ -46,7 +46,7 @@ func TestCore_sendPrepare(t *testing.T) {
 		// Increase round number until the owner of istanbul.core is not a member of the committee
 		for istCore.valSet.CheckInSubList(lastProposal.Hash(), istCore.currentView(), istCore.Address()) {
 			istCore.current.round.Add(istCore.current.round, common.Big1)
-			istCore.valSet.CalcProposer(lastProposer, istCore.current.sequence.Uint64(), istCore.current.round.Uint64())
+			istCore.valSet.CalcProposer(lastProposer, istCore.current.round.Uint64())
 		}
 
 		mockCtrl := gomock.NewController(t)
@@ -66,7 +66,7 @@ func TestCore_sendPrepare(t *testing.T) {
 		// Increase round number until the owner of istanbul.core become a member of the committee
 		for !istCore.valSet.CheckInSubList(lastProposal.Hash(), istCore.currentView(), istCore.Address()) {
 			istCore.current.round.Add(istCore.current.round, common.Big1)
-			istCore.valSet.CalcProposer(lastProposer, istCore.current.sequence.Uint64(), istCore.current.round.Uint64())
+			istCore.valSet.CalcProposer(lastProposer, istCore.current.round.Uint64())
 		}
 
 		mockCtrl := gomock.NewController(t)

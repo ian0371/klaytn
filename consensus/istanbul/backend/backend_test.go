@@ -685,7 +685,7 @@ func Benchmark_getTargetReceivers(b *testing.B) {
 	rewards := getTestRewards()
 	valSet := validator.NewWeightedCouncil(council, nil, rewards, getTestVotingPowers(len(council)), nil, istanbul.WeightedRandom, 21, 0, 0, nil)
 	valSet.SetBlockNum(uint64(1))
-	valSet.CalcProposer(valSet.GetProposer().Address(), backend.currentBlock().Number().Uint64(), uint64(1))
+	valSet.CalcProposer(valSet.GetProposer().Address(), uint64(1))
 	hex := fmt.Sprintf("%015d000000000000000000000000000000000000000000000000000", 1)
 	prevHash := common.HexToHash(hex)
 
@@ -716,7 +716,7 @@ func Test_GossipSubPeerTargets(t *testing.T) {
 		for round := int64(0); round < 15; round++ {
 			backend.currentView.Store(&istanbul.View{Sequence: big.NewInt(i), Round: big.NewInt(round)})
 			valSet.SetBlockNum(uint64(i))
-			valSet.CalcProposer(valSet.GetProposer().Address(), backend.currentBlock().Number().Uint64(), uint64(round))
+			valSet.CalcProposer(valSet.GetProposer().Address(), uint64(round))
 
 			// Use block number as prevHash. In SubList() only left 15 bytes are being used.
 			hex := fmt.Sprintf("%015d000000000000000000000000000000000000000000000000000", i)
@@ -734,12 +734,12 @@ func Test_GossipSubPeerTargets(t *testing.T) {
 			viewCurrent.Round = viewCurrent.Round.Add(viewCurrent.Round, common.Big1)
 			backend.currentView.Store(viewCurrent)
 
-			valSet.CalcProposer(valSet.GetProposer().Address(), backend.currentBlock().Number().Uint64(), uint64(round+1))
+			valSet.CalcProposer(valSet.GetProposer().Address(), uint64(round+1))
 			committees[1] = valSet.SubList(prevHash, viewCurrent)
 
 			// Reduce round by 1 to set round to the current round before calling GossipSubPeer
 			viewCurrent.Round = viewCurrent.Round.Sub(viewCurrent.Round, common.Big1)
-			valSet.CalcProposer(valSet.GetProposer().Address(), backend.currentBlock().Number().Uint64(), uint64(round))
+			valSet.CalcProposer(valSet.GetProposer().Address(), uint64(round))
 			backend.currentView.Store(viewCurrent)
 
 			// Receiving the receiver list of a message

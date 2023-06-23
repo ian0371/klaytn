@@ -132,29 +132,29 @@ func TestNormalWeightedCouncil(t *testing.T) {
 
 	// test calculate proposer
 	lastProposer := addr1
-	valSet.CalcProposer(lastProposer, 0, uint64(0))
+	valSet.CalcProposer(lastProposer, uint64(0))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val1) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val1)
 	}
 
-	valSet.CalcProposer(lastProposer, 0, uint64(1))
+	valSet.CalcProposer(lastProposer, uint64(1))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
 
-	valSet.CalcProposer(lastProposer, 0, uint64(2))
+	valSet.CalcProposer(lastProposer, uint64(2))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val1) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val1)
 	}
 
-	valSet.CalcProposer(lastProposer, 0, uint64(5))
+	valSet.CalcProposer(lastProposer, uint64(5))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
 
 	// test empty last proposer
 	lastProposer = common.Address{}
-	valSet.CalcProposer(lastProposer, 0, uint64(3))
+	valSet.CalcProposer(lastProposer, uint64(3))
 	if val := valSet.GetProposer(); !reflect.DeepEqual(val, val2) {
 		t.Errorf("proposer mismatch: have %v, want %v", val, val2)
 	}
