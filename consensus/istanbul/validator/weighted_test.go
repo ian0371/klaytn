@@ -25,7 +25,6 @@ import (
 	"github.com/klaytn/klaytn/common"
 	"github.com/klaytn/klaytn/consensus/istanbul"
 	"github.com/klaytn/klaytn/crypto"
-	"github.com/klaytn/klaytn/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -162,7 +161,6 @@ func TestNormalWeightedCouncil(t *testing.T) {
 }
 
 func TestEmptyWeightedCouncil(t *testing.T) {
-	log.EnableLogForTest(log.LvlCrit, log.LvlCrit)
 	valSet := NewWeightedCouncil(ExtractValidators([]byte{}), nil, nil, nil, nil, istanbul.WeightedRandom, 0, 0, 0, &blockchain.BlockChain{})
 	if valSet == nil {
 		t.Errorf("validator set should not be nil")
