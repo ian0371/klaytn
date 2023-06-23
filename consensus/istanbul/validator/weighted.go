@@ -297,7 +297,8 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 
 func weightedRandomProposerKIP146(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
 	shuffled := shuffleValidatorsKIP146(valSet.List(), round, seed)
-	return shuffled[round%uint64(len(shuffled))]
+	proposer := shuffled[round%uint64(len(shuffled))]
+	return proposer
 }
 
 func shuffleValidatorsKIP146(validators istanbul.Validators, round uint64, seed int64) istanbul.Validators {
@@ -387,7 +388,9 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 		pendingHeaderNumber := new(big.Int).Add(header.Number, common.Big1)
 
 		if valSet.chain.Config().IsKoreForkEnabled(pendingHeaderNumber) {
-			committee := SelectKIP146Committee(validators, committeeSize, 1, view.Round.Uint64())
+			logger.Info("[KIP146] Calling SelectKIP146Committee from SubListWithProposer", "pendingHeaderNumber", pendingHeaderNumber)
+			latestBlockNum := int64(view.Sequence.Uint64() - 1)
+			committee := SelectKIP146Committee(validators, committeeSize, latestBlockNum, view.Round.Uint64())
 			proposerInCommittee := false
 			for _, member := range committee {
 				if proposerAddr == member.Address() {
@@ -553,9 +556,8 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, pending
 	var newProposer istanbul.Validator
 
 	if valSet.chain != nil && valSet.chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(pendingBlockNum)) {
-		header := valSet.chain.GetHeaderByNumber(pendingBlockNum - 1)
-		seed := header.Number.Int64()
-		newProposer = valSet.selector(valSet, lastProposer, round, seed)
+		latestBlockNum := int64(pendingBlockNum - 1)
+		newProposer = valSet.selector(valSet, lastProposer, round, latestBlockNum)
 	} else {
 		newProposer = valSet.selector(valSet, lastProposer, round, 0)
 	}
