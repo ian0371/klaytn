@@ -274,7 +274,7 @@ func (valSet *defaultSet) IsProposer(address common.Address) bool {
 	return reflect.DeepEqual(valSet.GetProposer(), val)
 }
 
-func (valSet *defaultSet) CalcProposer(lastProposer common.Address, blockNum uint64, round uint64) {
+func (valSet *defaultSet) CalcProposer(lastProposer common.Address, round uint64) {
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 

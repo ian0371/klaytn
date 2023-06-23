@@ -545,7 +545,7 @@ func (valSet *weightedCouncil) chooseProposerByRoundRobin(lastProposer common.Ad
 	return valSet.validators[pick]
 }
 
-func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, pendingBlockNum uint64, round uint64) {
+func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, round uint64) {
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
@@ -555,7 +555,7 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, pending
 	if valSet.chain != nil {
 		config = valSet.chain.Config()
 	}
-	seed := int64(pendingBlockNum - 1)
+	seed := int64(valSet.blockNum)
 	newProposer = valSet.selector(valSet, lastProposer, round, seed, config)
 
 	if newProposer == nil {

@@ -771,7 +771,7 @@ func (sb *backend) GetConsensusInfo(block *types.Block) (consensus.ConsensusInfo
 	lastProposer := sb.GetProposer(blockNumber - 1)
 
 	newValSet := snap.ValSet.Copy()
-	newValSet.CalcProposer(lastProposer, blockNumber, 0)
+	newValSet.CalcProposer(lastProposer, 0)
 	originProposer = newValSet.GetProposer().Address()
 
 	// get the committee list of this block at the view (blockNumber, round)

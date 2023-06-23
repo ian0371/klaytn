@@ -75,7 +75,7 @@ type ChainReader interface {
 
 type ValidatorSet interface {
 	// Calculate the proposer
-	CalcProposer(lastProposer common.Address, blockNum uint64, round uint64)
+	CalcProposer(lastProposer common.Address, round uint64)
 	// Return the validator size
 	Size() uint64
 	// Return the sub validator group size
