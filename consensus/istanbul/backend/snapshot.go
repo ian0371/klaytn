@@ -211,9 +211,9 @@ func (s *Snapshot) apply(headers []*types.Header, gov governance.Engine, addr co
 			minStaking := pset.MinimumStakeBig().Uint64()
 
 			var pHeader *types.Header
-			// after hardfork is mined, change the header argument to every block
+			// if next block is hardfork block, pHeader is the latest header
 			// this emasculates proposalRefreshInterval
-			if chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(number)) {
+			if chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(number + 1)) {
 				pHeader = header
 			} else {
 				pHeader = chain.GetHeaderByNumber(params.CalcProposerBlockNumber(number + 1))
