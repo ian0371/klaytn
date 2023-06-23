@@ -283,7 +283,8 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 
 	var proposer istanbul.Validator
 
-	if config != nil && config.IsKoreForkEnabled(new(big.Int).SetUint64(weightedCouncil.blockNum)) {
+	// checking blockNum + 1 makes activation = hardfork
+	if config != nil && config.IsKoreForkEnabled(new(big.Int).SetUint64(weightedCouncil.blockNum+1)) {
 		validators := valSet.List()
 		shuffled := shuffleValidatorsKIP146(validators, round, seed)
 		proposer = shuffled[round%uint64(len(validators))]
@@ -731,9 +732,13 @@ func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config
 		valSet.setValidators(weightedValidators, demotedValidators)
 	}
 
-	// after Kore, this is always false
 	if valSet.proposersBlockNum == blockNum {
 		// proposers are already refreshed
+		return nil
+	}
+
+	// KIP-146 does not need to refresh proposers
+	if chainRules.IsKore {
 		return nil
 	}
 
