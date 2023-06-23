@@ -225,11 +225,13 @@ func (sb *backend) getTargetReceivers(prevHash common.Hash, valSet istanbul.Vali
 		}
 		view.Round = view.Round.Add(view.Round, common.Big1)
 		header := sb.chain.GetHeaderByHash(prevHash)
+		var seed int64
 		if header != nil {
-			proposer = valSet.Selector(valSet, common.Address{}, view.Round.Uint64(), header.Number.Int64())
+			seed = header.Number.Int64()
 		} else {
-			proposer = valSet.Selector(valSet, common.Address{}, view.Round.Uint64(), 0)
+			seed = 0
 		}
+		proposer = valSet.Selector(valSet, common.Address{}, view.Round.Uint64(), seed, sb.chain.Config())
 	}
 	return targets
 }

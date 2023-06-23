@@ -216,12 +216,8 @@ func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, r
 	}
 	valSet.SetSubGroupSize(committeeSize)
 
+	valSet.selector = weightedRandomProposer
 	// chain can be nil in tests
-	if chain != nil && chain.Config() != nil && chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(blockNum+1)) {
-		valSet.selector = weightedRandomProposerKIP146
-	} else {
-		valSet.selector = weightedRandomProposer
-	}
 	valSet.chain = chain
 
 	valSet.blockNum = blockNum
@@ -272,7 +268,7 @@ func GetWeightedCouncilData(valSet istanbul.ValidatorSet) (validators []common.A
 	return
 }
 
-func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
+func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64, config *params.ChainConfig) istanbul.Validator {
 	weightedCouncil, ok := valSet.(*weightedCouncil)
 	if !ok {
 		logger.Error("weightedRandomProposer() Not weightedCouncil type.")
@@ -285,24 +281,23 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 		return nil
 	}
 
-	// At Refresh(), proposers is already randomly shuffled considering weights.
-	// So let's just round robin this array
-	blockNum := weightedCouncil.blockNum
-	picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
-	proposer := weightedCouncil.proposers[picker]
+	var proposer istanbul.Validator
+
+	if config != nil && config.IsKoreForkEnabled(new(big.Int).SetUint64(weightedCouncil.blockNum)) {
+		validators := valSet.List()
+		shuffled := shuffleValidatorsKIP146(validators, round, seed)
+		proposer = shuffled[round%uint64(len(validators))]
+	} else {
+		// At Refresh(), proposers is already randomly shuffled considering weights.
+		// So let's just round robin this array
+		blockNum := weightedCouncil.blockNum
+		picker := (blockNum + round - params.CalcProposerBlockNumber(blockNum+1)) % uint64(numProposers)
+		proposer = weightedCouncil.proposers[picker]
+	}
 
 	// Enable below more detailed log when debugging
 	// logger.Trace("Select a proposer using weighted random", "proposer", proposer.String(), "picker", picker, "blockNum of council", blockNum, "round", round, "blockNum of proposers updated", weightedCouncil.proposersBlockNum, "number of proposers", numProposers, "all proposers", weightedCouncil.proposers)
 
-	return proposer
-}
-
-func weightedRandomProposerKIP146(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
-	shuffled := shuffleValidatorsKIP146(valSet.List(), round, seed)
-	if seed == 0 {
-		panic("seed is 0")
-	}
-	proposer := shuffled[round%uint64(len(shuffled))]
 	return proposer
 }
 
@@ -433,7 +428,7 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, 0)
+		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, 0, nil)
 		if proposer.Address() != nextProposer.Address() {
 			break
 		}
@@ -556,12 +551,12 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, pending
 
 	var newProposer istanbul.Validator
 
-	if valSet.chain != nil && valSet.chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(pendingBlockNum)) {
-		latestBlockNum := int64(pendingBlockNum - 1)
-		newProposer = valSet.selector(valSet, lastProposer, round, latestBlockNum)
-	} else {
-		newProposer = valSet.selector(valSet, lastProposer, round, 0)
+	var config *params.ChainConfig
+	if valSet.chain != nil {
+		config = valSet.chain.Config()
 	}
+	seed := int64(pendingBlockNum - 1)
+	newProposer = valSet.selector(valSet, lastProposer, round, seed, config)
 
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
@@ -722,13 +717,6 @@ func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config
 
 	blockNumBig := new(big.Int).SetUint64(blockNum)
 	chainRules := config.Rules(blockNumBig)
-
-	// after mining the hardfork, change the selector
-	// TODO: change selector back when SetHead
-	if valSet.chain != nil && valSet.chain.Config().KoreCompatibleBlock.Cmp(blockNumBig) == 0 {
-		logger.Debug("[KIP-146] Update selector to KIP146")
-		valSet.selector = weightedRandomProposerKIP146
-	}
 
 	candidates := append(valSet.validators, valSet.demotedValidators...)
 	weightedValidators, stakingAmounts, err := getStakingAmountsOfValidators(candidates, newStakingInfo)
@@ -1004,6 +992,6 @@ func (valSet *weightedCouncil) TotalVotingPower() uint64 {
 	return sum
 }
 
-func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
-	return valSet.selector(valS, lastProposer, round, seed)
+func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64, config *params.ChainConfig) istanbul.Validator {
+	return valSet.selector(valS, lastProposer, round, seed, config)
 }
