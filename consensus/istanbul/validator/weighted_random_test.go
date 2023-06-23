@@ -542,7 +542,6 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 
 	// SubsetLen test: various subset length test
 	valSet.SetBlockNum(1)
-	valSet.SetSeed(1)
 	for testSubsetLen := 2; testSubsetLen < len(validators); testSubsetLen++ {
 		// set committee size and calculate proposer
 		valSet.SetSubGroupSize(uint64(testSubsetLen))
@@ -563,7 +562,6 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 
 	// Round test: various round test
 	valSet.SetBlockNum(1)
-	valSet.SetSeed(1)
 	valSet.SetSubGroupSize(uint64(len(validators) - 1))
 	for round := 0; round < len(expectIndexOfRoundTestBeforeIstanbulCompatible); round++ {
 		// calculate proposer and set view with test round value

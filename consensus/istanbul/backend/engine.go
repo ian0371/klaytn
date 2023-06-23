@@ -50,8 +50,8 @@ const (
 	// inmemoryPeers      = 40
 	// inmemoryMessages   = 1024
 
-	checkpointInterval = 8 // Number of blocks after which to save the vote snapshot to the database
-	inmemorySnapshots  = 4 // Number of recent vote snapshots to keep in memory
+	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
+	inmemorySnapshots  = 496  // Number of recent vote snapshots to keep in memory
 	inmemoryPeers      = 200
 	inmemoryMessages   = 4096
 
