@@ -384,10 +384,9 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 		return validators
 	}
 
-	if valSet.chain != nil && valSet.chain.Config().IsKoreForkEnabled(view.Sequence) {
-		latestBlockNum := int64(view.Sequence.Uint64() - 1)
-		logger.Info("[KIP146] Calling SelectKIP146Committee from SubListWithProposer", "latestBlockNum", latestBlockNum)
-		committee := SelectKIP146Committee(validators, committeeSize, latestBlockNum, view.Round.Uint64())
+	if valSet.chain != nil && valSet.chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(valSet.blockNum+1)) {
+		seed := int64(valSet.blockNum + 1)
+		committee := SelectKIP146Committee(validators, committeeSize, seed, view.Round.Uint64())
 		proposerInCommittee := false
 		for _, member := range committee {
 			if proposerAddr == member.Address() {
