@@ -648,6 +648,7 @@ func (valSet *weightedCouncil) Copy() istanbul.ValidatorSet {
 		proposersBlockNum: valSet.proposersBlockNum,
 		blockNum:          valSet.blockNum,
 		chain:             valSet.chain,
+		seed:              valSet.seed,
 	}
 	newWeightedCouncil.validators = make([]istanbul.Validator, len(valSet.validators))
 	copy(newWeightedCouncil.validators, valSet.validators)
