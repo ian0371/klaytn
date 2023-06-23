@@ -215,12 +215,14 @@ func NewWeightedCouncil(addrs []common.Address, demotedAddrs []common.Address, r
 		valSet.proposer.Store(valSet.GetByIndex(0))
 	}
 	valSet.SetSubGroupSize(committeeSize)
+
+	// chain can be nil in tests
 	if chain != nil && chain.Config() != nil && chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(blockNum+1)) {
 		valSet.selector = weightedRandomProposerKIP146
-		valSet.chain = chain
 	} else {
 		valSet.selector = weightedRandomProposer
 	}
+	valSet.chain = chain
 
 	valSet.blockNum = blockNum
 	valSet.proposers = make([]istanbul.Validator, len(addrs))
@@ -297,6 +299,9 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 
 func weightedRandomProposerKIP146(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64) istanbul.Validator {
 	shuffled := shuffleValidatorsKIP146(valSet.List(), round, seed)
+	if seed == 0 {
+		panic("seed is 0")
+	}
 	proposer := shuffled[round%uint64(len(shuffled))]
 	return proposer
 }
@@ -383,30 +388,26 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 		return validators
 	}
 
-	if valSet.chain != nil {
-		header := valSet.chain.GetHeaderByHash(prevHash)
-		pendingHeaderNumber := new(big.Int).Add(header.Number, common.Big1)
-
-		if valSet.chain.Config().IsKoreForkEnabled(pendingHeaderNumber) {
-			logger.Info("[KIP146] Calling SelectKIP146Committee from SubListWithProposer", "pendingHeaderNumber", pendingHeaderNumber)
-			latestBlockNum := int64(view.Sequence.Uint64() - 1)
-			committee := SelectKIP146Committee(validators, committeeSize, latestBlockNum, view.Round.Uint64())
-			proposerInCommittee := false
-			for _, member := range committee {
-				if proposerAddr == member.Address() {
-					proposerInCommittee = true
-					break
-				}
+	if valSet.chain != nil && valSet.chain.Config().IsKoreForkEnabled(view.Sequence) {
+		latestBlockNum := int64(view.Sequence.Uint64() - 1)
+		logger.Info("[KIP146] Calling SelectKIP146Committee from SubListWithProposer", "latestBlockNum", latestBlockNum)
+		committee := SelectKIP146Committee(validators, committeeSize, latestBlockNum, view.Round.Uint64())
+		proposerInCommittee := false
+		for _, member := range committee {
+			if proposerAddr == member.Address() {
+				proposerInCommittee = true
+				break
 			}
-
-			// highly unlikely. Add proposer if not in committee
-			if !proposerInCommittee {
-				_, proposer := valSet.getByAddress(proposerAddr)
-				committee = append(committee[:len(committee)-1], proposer)
-			}
-
-			return committee
 		}
+
+		// Almost confident that this is never executed, but not 100% sure.
+		// Add proposer if not in committee
+		if !proposerInCommittee {
+			_, proposer := valSet.getByAddress(proposerAddr)
+			committee = append(committee[:len(committee)-1], proposer)
+		}
+
+		return committee
 	}
 
 	// find the proposer
@@ -693,13 +694,6 @@ func (valSet *weightedCouncil) Policy() istanbul.ProposerPolicy { return valSet.
 //	(1) already has up-do-date proposers
 //	(2) successfully calculated up-do-date proposers
 func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config *params.ChainConfig, isSingle bool, governingNode common.Address, minStaking uint64) error {
-	// if next block is hardfork, change the selector
-	// do not use IsKoreForkEnabled, but use IsKoreForkBlock instead
-	if config.IsKoreForkEnabled(new(big.Int).SetUint64(blockNum + 1)) {
-		valSet.selector = weightedRandomProposerKIP146
-		return nil
-	}
-
 	// TODO-Klaytn-Governance divide the following logic into two parts: proposers update / validators update
 	valSet.validatorMu.Lock()
 	defer valSet.validatorMu.Unlock()
@@ -729,6 +723,13 @@ func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config
 	blockNumBig := new(big.Int).SetUint64(blockNum)
 	chainRules := config.Rules(blockNumBig)
 
+	// after mining the hardfork, change the selector
+	// TODO: change selector back when SetHead
+	if valSet.chain != nil && valSet.chain.Config().KoreCompatibleBlock.Cmp(blockNumBig) == 0 {
+		logger.Debug("[KIP-146] Update selector to KIP146")
+		valSet.selector = weightedRandomProposerKIP146
+	}
+
 	candidates := append(valSet.validators, valSet.demotedValidators...)
 	weightedValidators, stakingAmounts, err := getStakingAmountsOfValidators(candidates, newStakingInfo)
 	if err != nil {
@@ -742,6 +743,7 @@ func (valSet *weightedCouncil) Refresh(hash common.Hash, blockNum uint64, config
 		valSet.setValidators(weightedValidators, demotedValidators)
 	}
 
+	// after Kore, this is always false
 	if valSet.proposersBlockNum == blockNum {
 		// proposers are already refreshed
 		return nil

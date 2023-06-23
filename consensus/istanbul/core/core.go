@@ -274,6 +274,7 @@ func (c *core) startNewRound(round *big.Int) {
 	c.updateRoundState(newView, c.valSet, roundChange)
 	// Calculate new proposer
 	c.valSet.CalcProposer(lastProposer, newView.Sequence.Uint64(), newView.Round.Uint64())
+	logger.Info("[KIP-146] startNewRound", "proposer", c.valSet.GetProposer().Address().Hex())
 	c.waitingForRoundChange = false
 	c.setState(StateAcceptRequest)
 	if roundChange && c.isProposer() && c.current != nil {

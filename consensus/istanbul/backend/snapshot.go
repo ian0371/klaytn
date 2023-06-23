@@ -23,6 +23,7 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
+	"math/big"
 
 	"github.com/klaytn/klaytn/consensus"
 
@@ -209,7 +210,15 @@ func (s *Snapshot) apply(headers []*types.Header, gov governance.Engine, addr co
 			govNode := pset.GoverningNode()
 			minStaking := pset.MinimumStakeBig().Uint64()
 
-			pHeader := chain.GetHeaderByNumber(params.CalcProposerBlockNumber(number + 1))
+			var pHeader *types.Header
+			// after hardfork is mined, change the header argument to every block
+			// this emasculates proposalRefreshInterval
+			if chain.Config().IsKoreForkEnabled(new(big.Int).SetUint64(number)) {
+				pHeader = header
+			} else {
+				pHeader = chain.GetHeaderByNumber(params.CalcProposerBlockNumber(number + 1))
+			}
+
 			if pHeader != nil {
 				if err := snap.ValSet.Refresh(pHeader.Hash(), pHeader.Number.Uint64(), chain.Config(), isSingle, govNode, minStaking); err != nil {
 					// There are three error cases and they just don't refresh proposers
