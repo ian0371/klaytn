@@ -238,6 +238,7 @@ func (s *Snapshot) apply(headers []*types.Header, gov governance.Engine, addr co
 	if snap.ValSet.Policy() == istanbul.WeightedRandom {
 		// TODO-Klaytn-Issue1166 We have to update block number of ValSet too.
 		snap.ValSet.SetBlockNum(snap.Number)
+		snap.ValSet.SetSeed(int64(snap.Number))
 	}
 	snap.ValSet.SetSubGroupSize(snap.CommitteeSize)
 

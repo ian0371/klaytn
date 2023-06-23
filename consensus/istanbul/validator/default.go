@@ -192,7 +192,7 @@ func (valSet *defaultSet) SubListWithProposer(prevHash common.Hash, proposerAddr
 	}
 
 	// find the next proposer
-	nextProposer := valSet.selector(valSet, proposer.Address(), view.Round.Uint64(), 0, nil)
+	nextProposer := valSet.selector(valSet, proposer.Address(), view.Round.Uint64())
 	nextProposerIdx, _ := valSet.GetByAddress(nextProposer.Address())
 	if nextProposerIdx < 0 {
 		logger.Error("invalid index of the next proposer",
@@ -283,7 +283,7 @@ func (valSet *defaultSet) CalcProposer(lastProposer common.Address, round uint64
 		return
 	}
 
-	valSet.proposer.Store(valSet.selector(valSet, lastProposer, round, 0, nil))
+	valSet.proposer.Store(valSet.selector(valSet, lastProposer, round))
 }
 
 func calcSeed(valSet istanbul.ValidatorSet, proposer common.Address, round uint64) uint64 {
@@ -298,7 +298,7 @@ func emptyAddress(addr common.Address) bool {
 	return addr == common.Address{}
 }
 
-func roundRobinProposer(valSet istanbul.ValidatorSet, proposer common.Address, round uint64, _seed int64, config *params.ChainConfig) istanbul.Validator {
+func roundRobinProposer(valSet istanbul.ValidatorSet, proposer common.Address, round uint64) istanbul.Validator {
 	seed := uint64(0)
 	if emptyAddress(proposer) {
 		seed = round
@@ -309,7 +309,7 @@ func roundRobinProposer(valSet istanbul.ValidatorSet, proposer common.Address, r
 	return valSet.GetByIndex(pick)
 }
 
-func stickyProposer(valSet istanbul.ValidatorSet, proposer common.Address, round uint64, _seed int64, config *params.ChainConfig) istanbul.Validator {
+func stickyProposer(valSet istanbul.ValidatorSet, proposer common.Address, round uint64) istanbul.Validator {
 	seed := uint64(0)
 	if emptyAddress(proposer) {
 		seed = round
@@ -381,6 +381,7 @@ func (valSet *defaultSet) Refresh(hash common.Hash, blockNum uint64, config *par
 	return nil
 }
 func (valSet *defaultSet) SetBlockNum(blockNum uint64)         { /* Do nothing */ }
+func (valSet *defaultSet) SetSeed(seed int64)                  { /* Do nothing */ }
 func (valSet *defaultSet) SetChain(chain istanbul.ChainReader) { /* Do nothing */ }
 func (valSet *defaultSet) Proposers() []istanbul.Validator     { return nil }
 func (valSet *defaultSet) TotalVotingPower() uint64 {
@@ -391,6 +392,6 @@ func (valSet *defaultSet) TotalVotingPower() uint64 {
 	return sum
 }
 
-func (valSet *defaultSet) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64, config *params.ChainConfig) istanbul.Validator {
-	return valSet.selector(valS, lastProposer, round, seed, config)
+func (valSet *defaultSet) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
+	return valSet.selector(valS, lastProposer, round)
 }

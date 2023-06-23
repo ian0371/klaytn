@@ -113,6 +113,7 @@ type weightedCouncil struct {
 	stakingInfo *reward.StakingInfo
 
 	blockNum uint64 // block number when council is determined
+	seed     int64  // seed from mixHash at blockNum
 	chain    istanbul.ChainReader
 }
 
@@ -268,7 +269,7 @@ func GetWeightedCouncilData(valSet istanbul.ValidatorSet) (validators []common.A
 	return
 }
 
-func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64, config *params.ChainConfig) istanbul.Validator {
+func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
 	weightedCouncil, ok := valSet.(*weightedCouncil)
 	if !ok {
 		logger.Error("weightedRandomProposer() Not weightedCouncil type.")
@@ -428,7 +429,7 @@ func (valSet *weightedCouncil) SubListWithProposer(prevHash common.Hash, propose
 				"proposer", proposer.Address().String(), "validatorAddrs", validators.AddressStringList())
 			return validators
 		}
-		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx, 0, nil)
+		nextProposer = valSet.selector(valSet, proposerAddr, view.Round.Uint64()+idx)
 		if proposer.Address() != nextProposer.Address() {
 			break
 		}
@@ -549,13 +550,7 @@ func (valSet *weightedCouncil) CalcProposer(lastProposer common.Address, round u
 	valSet.validatorMu.RLock()
 	defer valSet.validatorMu.RUnlock()
 
-	seed := int64(valSet.blockNum)
-	var config *params.ChainConfig
-	if valSet.chain != nil {
-		config = valSet.chain.Config()
-	}
-	newProposer := valSet.selector(valSet, lastProposer, round, seed, config)
-
+	newProposer := valSet.selector(valSet, lastProposer, round)
 	if newProposer == nil {
 		if len(valSet.validators) == 0 {
 			// TODO-Klaytn We must make a policy about the mininum number of validators, which can prevent this case.
@@ -973,6 +968,10 @@ func (valSet *weightedCouncil) SetBlockNum(blockNum uint64) {
 	valSet.blockNum = blockNum
 }
 
+func (valSet *weightedCouncil) SetSeed(seed int64) {
+	valSet.seed = seed
+}
+
 func (valSet *weightedCouncil) SetChain(chain istanbul.ChainReader) {
 	if chain == nil {
 		_, file, line, _ := runtime.Caller(1)
@@ -994,6 +993,6 @@ func (valSet *weightedCouncil) TotalVotingPower() uint64 {
 	return sum
 }
 
-func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64, seed int64, config *params.ChainConfig) istanbul.Validator {
-	return valSet.selector(valS, lastProposer, round, seed, config)
+func (valSet *weightedCouncil) Selector(valS istanbul.ValidatorSet, lastProposer common.Address, round uint64) istanbul.Validator {
+	return valSet.selector(valS, lastProposer, round)
 }

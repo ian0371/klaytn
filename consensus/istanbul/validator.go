@@ -120,15 +120,17 @@ type ValidatorSet interface {
 
 	SetBlockNum(blockNum uint64)
 
+	SetSeed(seed int64)
+
 	SetChain(chain ChainReader)
 
 	Proposers() []Validator // TODO-Klaytn-Issue1166 For debugging
 
 	TotalVotingPower() uint64
 
-	Selector(valSet ValidatorSet, lastProposer common.Address, round uint64, seed int64, config *params.ChainConfig) Validator
+	Selector(valSet ValidatorSet, lastProposer common.Address, round uint64) Validator
 }
 
 // ----------------------------------------------------------------------------
 
-type ProposalSelector func(ValidatorSet, common.Address, uint64, int64, *params.ChainConfig) Validator
+type ProposalSelector func(ValidatorSet, common.Address, uint64) Validator

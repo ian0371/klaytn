@@ -542,6 +542,7 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 
 	// SubsetLen test: various subset length test
 	valSet.SetBlockNum(1)
+	valSet.SetSeed(1)
 	for testSubsetLen := 2; testSubsetLen < len(validators); testSubsetLen++ {
 		// set committee size and calculate proposer
 		valSet.SetSubGroupSize(uint64(testSubsetLen))
@@ -562,6 +563,7 @@ func TestWeightedCouncil_SubListWithProposer(t *testing.T) {
 
 	// Round test: various round test
 	valSet.SetBlockNum(1)
+	valSet.SetSeed(1)
 	valSet.SetSubGroupSize(uint64(len(validators) - 1))
 	for round := 0; round < len(expectIndexOfRoundTestBeforeIstanbulCompatible); round++ {
 		// calculate proposer and set view with test round value
@@ -590,10 +592,12 @@ func TestWeightedCouncil_SubListWithProposerKIP146(t *testing.T) {
 	)
 
 	valSet.SetBlockNum(pendingBlock)
+	valSet.SetSeed(int64(pendingBlock))
 	valSet.SetSubGroupSize(committeeSize)
 	valSet.CalcProposer(valSet.GetProposer().Address(), round)
+
 	committee := valSet.SubList(prevHash, &istanbul.View{Sequence: big.NewInt(int64(pendingBlock)), Round: big.NewInt(int64(round))})
-	selected := SelectKIP146Committee(validators, committeeSize, int64(pendingBlock), round)
+	selected := SelectKIP146Committee(validators, committeeSize, int64(valSet.blockNum), round)
 	assert.Equal(t, selected, committee)
 	assert.Contains(t, committee, valSet.GetProposer())
 }
