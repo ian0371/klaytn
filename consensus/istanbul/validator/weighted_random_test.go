@@ -592,7 +592,6 @@ func TestWeightedCouncil_SubListWithProposerKIP146(t *testing.T) {
 	)
 
 	valSet.SetBlockNum(pendingBlock)
-	valSet.SetSeed(int64(pendingBlock))
 	valSet.SetSubGroupSize(committeeSize)
 	valSet.CalcProposer(valSet.GetProposer().Address(), round)
 

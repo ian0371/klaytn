@@ -381,7 +381,6 @@ func (valSet *defaultSet) Refresh(hash common.Hash, blockNum uint64, config *par
 	return nil
 }
 func (valSet *defaultSet) SetBlockNum(blockNum uint64)         { /* Do nothing */ }
-func (valSet *defaultSet) SetSeed(seed int64)                  { /* Do nothing */ }
 func (valSet *defaultSet) SetChain(chain istanbul.ChainReader) { /* Do nothing */ }
 func (valSet *defaultSet) Proposers() []istanbul.Validator     { return nil }
 func (valSet *defaultSet) TotalVotingPower() uint64 {

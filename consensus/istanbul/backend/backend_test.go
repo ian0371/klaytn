@@ -685,7 +685,6 @@ func Benchmark_getTargetReceivers(b *testing.B) {
 	rewards := getTestRewards()
 	valSet := validator.NewWeightedCouncil(council, nil, rewards, getTestVotingPowers(len(council)), nil, istanbul.WeightedRandom, 21, 0, 0, nil)
 	valSet.SetBlockNum(uint64(1))
-	valSet.SetSeed(1)
 	valSet.CalcProposer(valSet.GetProposer().Address(), uint64(1))
 	hex := fmt.Sprintf("%015d000000000000000000000000000000000000000000000000000", 1)
 	prevHash := common.HexToHash(hex)
@@ -708,7 +707,6 @@ func Test_GossipSubPeerTargets(t *testing.T) {
 	rewards := getTestRewards()
 	valSet := validator.NewWeightedCouncil(council, nil, rewards, getTestVotingPowers(len(council)), nil, istanbul.WeightedRandom, 21, 0, 0, nil)
 	valSet.SetBlockNum(uint64(5))
-	valSet.SetSeed(5)
 
 	// Test for blocks from 0 to maxBlockNum
 	// from 0 to 4: before istanbul hard fork
@@ -718,7 +716,6 @@ func Test_GossipSubPeerTargets(t *testing.T) {
 		for round := int64(0); round < 15; round++ {
 			backend.currentView.Store(&istanbul.View{Sequence: big.NewInt(i), Round: big.NewInt(round)})
 			valSet.SetBlockNum(uint64(i))
-			valSet.SetSeed(i)
 			valSet.CalcProposer(valSet.GetProposer().Address(), uint64(round))
 
 			// Use block number as prevHash. In SubList() only left 15 bytes are being used.

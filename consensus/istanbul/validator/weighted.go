@@ -966,10 +966,7 @@ func (valSet *weightedCouncil) refreshProposers(seed int64, blockNum uint64) {
 
 func (valSet *weightedCouncil) SetBlockNum(blockNum uint64) {
 	valSet.blockNum = blockNum
-}
-
-func (valSet *weightedCouncil) SetSeed(seed int64) {
-	valSet.seed = seed
+	valSet.seed = int64(blockNum)
 }
 
 func (valSet *weightedCouncil) SetChain(chain istanbul.ChainReader) {

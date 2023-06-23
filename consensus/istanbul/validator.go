@@ -120,8 +120,6 @@ type ValidatorSet interface {
 
 	SetBlockNum(blockNum uint64)
 
-	SetSeed(seed int64)
-
 	SetChain(chain ChainReader)
 
 	Proposers() []Validator // TODO-Klaytn-Issue1166 For debugging
