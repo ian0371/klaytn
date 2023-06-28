@@ -305,12 +305,12 @@ func weightedRandomProposer(valSet istanbul.ValidatorSet, lastProposer common.Ad
 func shuffleValidatorsKIP146(validators istanbul.Validators, round uint64, seed int64) istanbul.Validators {
 	ret := make(istanbul.Validators, len(validators))
 	copy(ret, validators)
+	swap := func(x, y int) {
+		ret[x], ret[y] = ret[y], ret[x]
+	}
 
 	r := rand.New(rand.NewSource(seed))
-
-	r.Shuffle(len(ret), func(x, y int) {
-		ret[x], ret[y] = ret[y], ret[x]
-	})
+	r.Shuffle(len(ret), swap)
 
 	for i := 0; i < int(round); i++ {
 		// remove proposer at round i and shuffle
@@ -319,9 +319,7 @@ func shuffleValidatorsKIP146(validators istanbul.Validators, round uint64, seed 
 			break
 		}
 
-		r.Shuffle(len(tmp), func(x, y int) {
-			tmp[x], tmp[y] = tmp[y], tmp[x]
-		})
+		r.Shuffle(len(tmp), swap)
 	}
 
 	return ret
