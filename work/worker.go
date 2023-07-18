@@ -90,6 +90,18 @@ var (
 	snapshotStorageReadTimer = metrics.NewRegisteredTimer("miner/snapshot/storage/reads", nil)
 	snapshotCommitTimer      = metrics.NewRegisteredTimer("miner/snapshot/commits", nil)
 	calcDeferredRewardTimer  = metrics.NewRegisteredTimer("reward/distribute/calcdeferredreward", nil)
+
+	// VRank metrics
+	VrankMineToPreprepareLatency   = metrics.NewRegisteredGauge("vrank/mine_preprepare_latency", nil)
+	VrankPreprepareToCommitLatency = metrics.NewRegisteredGauge("vrank/preprepare_commit_latency", nil)
+	VrankNumCommits                = metrics.NewRegisteredGauge("vrank/num_commits", nil)
+	VrankStreaks                   = metrics.NewRegisteredGauge("vrank/streaks", nil)
+
+	// VRank logs
+	VrankMineStartTime  time.Time
+	VrankDelayedBlock   bool
+	VrankBlockTimeStart time.Time
+	VrankBlockTimeEnd   time.Time
 )
 
 // Agent can register themself with the worker
@@ -538,8 +550,14 @@ func (self *worker) commitNewWork() {
 
 			tstart = time.Now()    // refresh for metrics
 			tstamp = tstart.Unix() // refresh for block timestamp
+		} else {
+			VrankDelayedBlock = true
+			VrankBlockTimeStart = time.Unix(parent.Time().Int64(), 0)
+			VrankBlockTimeEnd = time.Now()
 		}
 	}
+
+	VrankMineStartTime = time.Now()
 
 	header := &types.Header{
 		ParentHash: parent.Hash(),

@@ -179,6 +179,8 @@ func (c *core) isProposer() bool {
 
 func (c *core) commit() {
 	c.setState(StateCommitted)
+	VrankCommittedTime = time.Now()
+	logger.Info("[VRank] commit", "PPR-CMT latency (ms)", VrankCommittedTime.Sub(VrankPrepreparedTime).Milliseconds())
 
 	proposal := c.current.Proposal()
 	if proposal != nil {
@@ -265,6 +267,11 @@ func (c *core) startNewRound(round *big.Int) {
 		c.committeeSizeGauge.Update(committeeSize)
 	}
 	c.backend.SetCurrentView(newView)
+	if c.current != nil && c.current.Commits != nil && newView != nil {
+		logger.Info("[VRank] startNewRound", "len", c.current.Commits.Size(),
+			"round", newView.Round,
+		)
+	}
 
 	// Update logger
 	logger = logger.NewWith("old_proposer", c.valSet.GetProposer())
