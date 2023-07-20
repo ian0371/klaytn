@@ -26,12 +26,6 @@ import (
 	"github.com/klaytn/klaytn/blockchain/types"
 	"github.com/klaytn/klaytn/consensus"
 	"github.com/klaytn/klaytn/consensus/istanbul"
-	"github.com/klaytn/klaytn/work"
-)
-
-var (
-	VrankPrepreparedTime time.Time
-	VrankCommittedTime   time.Time
 )
 
 func (c *core) sendPreprepare(request *istanbul.Request) {
@@ -139,11 +133,10 @@ func (c *core) handlePreprepare(msg *message, src istanbul.Validator) error {
 			c.acceptPreprepare(preprepare)
 			c.setState(StatePreprepared)
 			c.sendPrepare()
+
+			vrankAtPreprepare(c.currentView())
 		}
 	}
-
-	VrankPrepreparedTime = time.Now()
-	logger.Info("[VRank] handlePreprepare", "MINE-PPR latency (ms)", VrankPrepreparedTime.Sub(work.VrankMineStartTime).Milliseconds())
 
 	return nil
 }
