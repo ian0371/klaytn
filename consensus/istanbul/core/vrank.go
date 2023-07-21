@@ -76,6 +76,15 @@ func filterLateCommits(src map[common.Address]time.Duration) map[common.Address]
 	return ret
 }
 
+func logFormat(src map[common.Address]time.Duration) string {
+	log := "[ "
+	for k, v := range src {
+		log += fmt.Sprintf("%s:%s ", k.Hex(), v)
+	}
+	log += "]"
+	return log
+}
+
 func vrankAtPreprepare(view *istanbul.View) {
 	/*
 			lateCommits = filter CommitArrivalTimeMap whose value makes isLateCommittedSeal true
@@ -87,16 +96,11 @@ func vrankAtPreprepare(view *istanbul.View) {
 		    LastCommitArrivalTimeMetrics.Update(lastCommit)
 	*/
 
-	log := "[ "
-	for k, v := range vrankCommitArrivalTimeMap {
-		log += fmt.Sprintf("%s:%s ", k.Hex(), v)
-	}
-	log += "]"
-	logger.Info("VRank", "vrankCommitArrivalTimeMap", log)
+	logger.Info("VRank", "vrankCommitArrivalTimeMap", logFormat(vrankCommitArrivalTimeMap))
 	lateCommits := filterLateCommits(vrankCommitArrivalTimeMap)
 	if view.Round.Cmp(common.Big0) == 0 {
 		// TODO-VRANK: encode
-		logger.Info("VRank", "lateCommits", lateCommits)
+		logger.Info("VRank", "lateCommits", logFormat(lateCommits))
 	}
 
 	lastCommit := time.Duration(0)
