@@ -123,6 +123,11 @@ func vrankAtCommit() {
 		vrankLateThreshold = committedTime
 	}
 	logger.Info("VRank", "threshold", vrankLateThreshold)
-	vrankQuorumCommitArrivalTimeGauge.Update(1)          // TODO-VRANK: fix number
-	vrankAvgCommitArrivalTimeWithinQuorumGauge.Update(1) // TODO-VRANK: fix number
+	vrankQuorumCommitArrivalTimeGauge.Update(int64(committedTime))
+	sum := int64(0)
+	for _, v := range vrankCommitArrivalTimeMap {
+		sum += int64(v)
+	}
+	avg := sum / int64(len(vrankCommitArrivalTimeMap))
+	vrankAvgCommitArrivalTimeWithinQuorumGauge.Update(avg)
 }
