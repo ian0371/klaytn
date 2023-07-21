@@ -179,7 +179,6 @@ func (c *core) isProposer() bool {
 
 func (c *core) commit() {
 	c.setState(StateCommitted)
-	vrankAtCommit()
 
 	proposal := c.current.Proposal()
 	if proposal != nil {
@@ -194,6 +193,8 @@ func (c *core) commit() {
 			c.sendNextRoundChange("commit failure")
 			return
 		}
+
+		vrankAtCommit(proposal.Number())
 	} else {
 		// TODO-Klaytn never happen, but if proposal is nil, mining is not working.
 		logger.Error("istanbul.core current.Proposal is NULL")

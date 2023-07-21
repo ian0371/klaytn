@@ -34,6 +34,7 @@ var (
 
 	vrankDefaultLateThreshold = "300ms"
 	vrankPrepreparedTime      = time.Now()
+	vrankCommittee            = []istanbul.Validator{}
 	vrankLateThreshold, _     = time.ParseDuration(vrankDefaultLateThreshold)
 	vrankLateCommitView       = istanbul.View{
 		Sequence: big.NewInt(0),
@@ -76,7 +77,7 @@ func filterLateCommits(src map[common.Address]time.Duration) map[common.Address]
 	return ret
 }
 
-func logFormat(src map[common.Address]time.Duration) string {
+func vrankEncodeLog(src map[common.Address]time.Duration) string {
 	log := "[ "
 	for k, v := range src {
 		log += fmt.Sprintf("%s:%s ", k.Hex(), v)
@@ -85,22 +86,21 @@ func logFormat(src map[common.Address]time.Duration) string {
 	return log
 }
 
-func vrankAtPreprepare(view *istanbul.View) {
+func vrankAtPreprepare(view *istanbul.View, committee []istanbul.Validator) {
 	/*
 			lateCommits = filter CommitArrivalTimeMap whose value makes isLateCommittedSeal true
 		    if round is 0: // last proposal was finalized
 		        encode lateCommits into log format
 		        logger.Info("VRank", "bitmap[committesizebit] bitmap[committesizebit] {500 340 600 350 ...}")
-
-		    lastCommit = find the maximum value of CommitArrivalTimeMap
-		    LastCommitArrivalTimeMetrics.Update(lastCommit)
 	*/
 
-	logger.Info("VRank", "vrankCommitArrivalTimeMap", logFormat(vrankCommitArrivalTimeMap))
 	lateCommits := filterLateCommits(vrankCommitArrivalTimeMap)
+	vrankCommittee = committee
+
+	// one log per block
 	if view.Round.Cmp(common.Big0) == 0 {
 		// TODO-VRANK: encode
-		logger.Info("VRank", "lateCommits", logFormat(lateCommits))
+		logger.Info("VRank", "lateCommits", vrankEncodeLog(lateCommits))
 	}
 
 	lastCommit := time.Duration(0)
@@ -117,12 +117,16 @@ func vrankAtPreprepare(view *istanbul.View) {
 	vrankCommitArrivalTimeMap = make(map[common.Address]time.Duration)
 }
 
-func vrankAtCommit() {
+func vrankAtCommit(blockNum *big.Int) {
+	if vrankLateCommitView.Sequence.Cmp(blockNum) != 0 {
+		// not expecting this block
+		return
+	}
+
 	committedTime := timeSincePreprepare()
 	if vrankLateThreshold > committedTime {
 		vrankLateThreshold = committedTime
 	}
-	logger.Info("VRank", "threshold", vrankLateThreshold)
 	vrankQuorumCommitArrivalTimeGauge.Update(int64(committedTime))
 	sum := int64(0)
 	for _, v := range vrankCommitArrivalTimeMap {

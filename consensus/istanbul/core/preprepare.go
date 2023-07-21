@@ -134,7 +134,7 @@ func (c *core) handlePreprepare(msg *message, src istanbul.Validator) error {
 			c.setState(StatePreprepared)
 			c.sendPrepare()
 
-			vrankAtPreprepare(c.currentView())
+			vrankAtPreprepare(c.currentView(), c.valSet.SubList(preprepare.Proposal.ParentHash(), c.currentView()))
 		}
 	}
 
