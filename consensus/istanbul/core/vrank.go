@@ -45,6 +45,14 @@ var (
 	vrankCommitArrivalTimeMap = make(map[common.Address]time.Duration)
 )
 
+type vrank struct {
+	prepreparedTime           time.Time
+	committee                 istanbul.Validators
+	lateThreshold             time.Duration
+	vrankLateCommitView       istanbul.View
+	vrankCommitArrivalTimeMap map[common.Address]time.Duration
+}
+
 const (
 	vrankArrivedEarly = iota
 	vrankArrivedLate
@@ -85,9 +93,9 @@ func filterLateCommits(src map[common.Address]time.Duration) map[common.Address]
 	return ret
 }
 
-func vrankCategorizeArrivalTimeMap(src map[common.Address]time.Duration) map[common.Address]int {
-	kindList := make(map[common.Address]int, len(vrankCommittee))
-	for _, validator := range vrankCommittee {
+func categorizeArrivalTimeMap(committee istanbul.Validators, src map[common.Address]time.Duration) map[common.Address]int {
+	kindList := make(map[common.Address]int, len(committee))
+	for _, validator := range committee {
 		time, ok := src[validator.Address()]
 		var kind int
 		if !ok {
@@ -104,13 +112,25 @@ func vrankCategorizeArrivalTimeMap(src map[common.Address]time.Duration) map[com
 	return kindList
 }
 
-func vrankSerialize(valSet istanbul.Validators, m map[common.Address]int) []int {
+func serialize(committee istanbul.Validators, m map[common.Address]int) []int {
+	var sorted istanbul.Validators
+	copy(sorted[:], committee[:])
+	sort.Sort(sorted)
+
+	serialized := make([]int, len(m))
+	for i, v := range sorted {
+		serialized[i] = m[v.Address()]
+	}
+	return serialized
+}
+
+func vrankSerialize2(valSet istanbul.Validators, m map[common.Address]time.Duration) []time.Duration {
 	var sorted istanbul.Validators
 	copy(sorted[:], valSet[:])
 	sort.Sort(sorted)
 
-	serialized := []int{len(m)}
-	for i, v := range vrankCommittee {
+	serialized := make([]time.Duration, len(m))
+	for i, v := range sorted {
 		serialized[i] = m[v.Address()]
 	}
 	return serialized
@@ -145,11 +165,13 @@ func compressSerializedArrivals(arr []int) []byte {
 }
 
 func vrankLog() {
-	categorized := vrankCategorizeArrivalTimeMap(vrankCommitArrivalTimeMap)
-	serialized := vrankSerialize(vrankCommittee, categorized)
+	categorized := categorizeArrivalTimeMap(vrankCommittee, vrankCommitArrivalTimeMap)
+	serialized := serialize(vrankCommittee, categorized)
 	bytes := compressSerializedArrivals(serialized)
 	bitmap := hex.EncodeToString(bytes)
-	logger.Info("VRank", "lateCommits", bitmap)
+
+	timeSerialized := vrankSerialize2(vrankCommittee, vrankCommitArrivalTimeMap)
+	logger.Info("VRank", "lateCommits", bitmap, "time", timeSerialized)
 }
 
 func vrankAtPreprepare(view *istanbul.View, committee istanbul.Validators) {
