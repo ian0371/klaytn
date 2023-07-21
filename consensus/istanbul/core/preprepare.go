@@ -122,6 +122,8 @@ func (c *core) handlePreprepare(msg *message, src istanbul.Validator) error {
 				c.acceptPreprepare(preprepare)
 				c.setState(StatePrepared)
 				c.sendCommit()
+
+				vrankAtPreprepare(c.currentView(), c.valSet.SubList(preprepare.Proposal.ParentHash(), c.currentView()))
 			} else {
 				// Send round change
 				c.sendNextRoundChange("handlePreprepare. HashLocked, but received hash is different from locked hash")
