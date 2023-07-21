@@ -16,8 +16,9 @@
 package core
 
 import (
-	"fmt"
+	"encoding/hex"
 	"math/big"
+	"sort"
 	"time"
 
 	"github.com/klaytn/klaytn/common"
@@ -33,14 +34,21 @@ var (
 	vrankLastCommitArrivalTimeGauge            = metrics.NewRegisteredGauge("vrank/last_commit", nil)
 
 	vrankDefaultLateThreshold = "300ms"
-	vrankPrepreparedTime      = time.Now()
-	vrankCommittee            = []istanbul.Validator{}
-	vrankLateThreshold, _     = time.ParseDuration(vrankDefaultLateThreshold)
-	vrankLateCommitView       = istanbul.View{
+
+	vrankPrepreparedTime  = time.Now()
+	vrankCommittee        = istanbul.Validators{}
+	vrankLateThreshold, _ = time.ParseDuration(vrankDefaultLateThreshold)
+	vrankLateCommitView   = istanbul.View{
 		Sequence: big.NewInt(0),
 		Round:    big.NewInt(0),
 	}
 	vrankCommitArrivalTimeMap = make(map[common.Address]time.Duration)
+)
+
+const (
+	vrankArrivedEarly = iota
+	vrankArrivedLate
+	vrankArrivalDidNotReceive
 )
 
 func isVrankTargetCommit(msg *istanbul.Subject, src istanbul.Validator) bool {
@@ -77,16 +85,74 @@ func filterLateCommits(src map[common.Address]time.Duration) map[common.Address]
 	return ret
 }
 
-func vrankEncodeLog(src map[common.Address]time.Duration) string {
-	log := "[ "
-	for k, v := range src {
-		log += fmt.Sprintf("%s:%s ", k.Hex(), v)
+func vrankCategorizeArrivalTimeMap(src map[common.Address]time.Duration) map[common.Address]int {
+	kindList := make(map[common.Address]int, len(vrankCommittee))
+	for _, validator := range vrankCommittee {
+		time, ok := src[validator.Address()]
+		var kind int
+		if !ok {
+			kind = vrankArrivalDidNotReceive
+		} else {
+			if isVrankLateCommit(time) {
+				kind = vrankArrivedLate
+			} else {
+				kind = vrankArrivedEarly
+			}
+		}
+		kindList[validator.Address()] = kind
 	}
-	log += "]"
-	return log
+	return kindList
 }
 
-func vrankAtPreprepare(view *istanbul.View, committee []istanbul.Validator) {
+func vrankSerialize(valSet istanbul.Validators, m map[common.Address]int) []int {
+	var sorted istanbul.Validators
+	copy(sorted[:], valSet[:])
+	sort.Sort(sorted)
+
+	serialized := []int{len(m)}
+	for i, v := range vrankCommittee {
+		serialized[i] = m[v.Address()]
+	}
+	return serialized
+}
+
+func compressSerializedArrivals(arr []int) []byte {
+	zip := func(a, b, c, d int) byte {
+		a &= 0b11
+		b &= 0b11
+		c &= 0b11
+		d &= 0b11
+		return byte(a<<6 | b<<4 | c<<2 | d<<0)
+	}
+
+	// pad zero to make len(arr)%4 == 0
+	switch len(arr) % 4 {
+	case 1:
+		arr = append(arr, []int{0, 0, 0}...)
+	case 2:
+		arr = append(arr, []int{0, 0}...)
+	case 3:
+		arr = append(arr, []int{0}...)
+	}
+
+	ret := make([]byte, 0)
+
+	for i := 0; i < len(arr)/4; i++ {
+		chunk := arr[4*i : 4*(i+1)]
+		ret = append(ret, zip(chunk[0], chunk[1], chunk[2], chunk[3]))
+	}
+	return ret
+}
+
+func vrankLog() {
+	categorized := vrankCategorizeArrivalTimeMap(vrankCommitArrivalTimeMap)
+	serialized := vrankSerialize(vrankCommittee, categorized)
+	bytes := compressSerializedArrivals(serialized)
+	bitmap := hex.EncodeToString(bytes)
+	logger.Info("VRank", "lateCommits", bitmap)
+}
+
+func vrankAtPreprepare(view *istanbul.View, committee istanbul.Validators) {
 	/*
 			lateCommits = filter CommitArrivalTimeMap whose value makes isLateCommittedSeal true
 		    if round is 0: // last proposal was finalized
@@ -94,16 +160,10 @@ func vrankAtPreprepare(view *istanbul.View, committee []istanbul.Validator) {
 		        logger.Info("VRank", "bitmap[committesizebit] bitmap[committesizebit] {500 340 600 350 ...}")
 	*/
 
-	lateCommits := filterLateCommits(vrankCommitArrivalTimeMap)
-	vrankCommittee = committee
-
-	// one log per block
-	if view.Round.Cmp(common.Big0) == 0 {
-		// TODO-VRANK: encode
-		logger.Info("VRank", "lateCommits", vrankEncodeLog(lateCommits))
-	}
+	vrankLog()
 
 	lastCommit := time.Duration(0)
+	lateCommits := filterLateCommits(vrankCommitArrivalTimeMap)
 	for _, v := range lateCommits {
 		if v < lastCommit {
 			lastCommit = v
@@ -111,7 +171,9 @@ func vrankAtPreprepare(view *istanbul.View, committee []istanbul.Validator) {
 	}
 	vrankLastCommitArrivalTimeGauge.Update(int64(lastCommit))
 
+	// Restart measure
 	vrankPrepreparedTime = time.Now()
+	vrankCommittee = committee
 	vrankLateThreshold, _ = time.ParseDuration(vrankDefaultLateThreshold)
 	vrankLateCommitView = *view
 	vrankCommitArrivalTimeMap = make(map[common.Address]time.Duration)
